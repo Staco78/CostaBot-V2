@@ -1,0 +1,11 @@
+{
+    "commands": [
+        {
+            "command": {
+                "name": "hello",
+                "description": "say hello to costa"
+            },
+            "reply": "hi !"
+        }
+    ]
+}
