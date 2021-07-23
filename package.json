@@ -1,0 +1,17 @@
+{
+    "name": "costabot",
+    "authors": "Staco",
+    "version": "2.0.0",
+    "main": "dist/index.js",
+    "devDependencies": {
+        "typescript": "^4.3.5"
+    },
+    "dependencies": {
+        "discord.js": "^13.0.0-dev.5e70694.1626955541"
+    },
+    "scripts": {
+        "start": "node .",
+        "build": "tsc",
+        "watch": "tsc --watch"
+    }
+}

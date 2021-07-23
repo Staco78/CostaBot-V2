@@ -1,0 +1,8 @@
+{
+    "commands": [
+        {
+            "name": "hello",
+            "description": "say hello to costa"
+        }
+    ]
+}
