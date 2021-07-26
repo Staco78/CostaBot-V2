@@ -1,9 +1,22 @@
 type ApplicationCommandData = import("discord.js").ApplicationCommandData;
-type InteractionReplyOptions = import("discord.js").InteractionReplyOptions;
+type DiscordInteractionReplyOptions = import("discord.js").InteractionReplyOptions;
+
+interface InteractionReplyOptions extends DiscordInteractionReplyOptions {
+    personalized?: boolean;
+    name?: string;
+}
 
 interface ServerConfig {
-    commands: CommandConfig[];
+    xp: {
+        text: {
+            min: number;
+            max: number;
+            cooldown: number;
+        };
+    };
 }
+
+interface ServerCommandsConfig extends Array<CommandConfig> {}
 
 interface CommandConfig {
     command: ApplicationCommandData;
@@ -14,4 +27,16 @@ interface DatabaseMember {
     id: string;
     xp: number;
     name: string;
+    lastMessageTimestamp: number;
+}
+
+interface ImageGenerationShowXpData {
+    PPUrl: string;
+    username: string;
+    discriminator: string;
+    xp: number;
+    nextLvlXp: number;
+    lvlPassRatio: number;
+    level: number;
+    rank: number;
 }

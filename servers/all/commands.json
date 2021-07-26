@@ -1,0 +1,29 @@
+[
+    {
+        "command": {
+            "name": "xp",
+            "description": "Voir l'xp",
+            "options": [
+                {
+                    "type": 9,
+                    "name": "de",
+                    "description": "Voir l'xp d'une personne"
+                }
+            ]
+        },
+        "reply": {
+            "personalized": true,
+            "name": "show_xp"
+        }
+    },
+    {
+        "command": {
+            "name": "classement",
+            "description": "Le classement de tous les membres du serveur"
+        },
+        "reply": {
+            "personalized": true,
+            "name": "xp_classement"
+        }
+    }
+]

@@ -17,8 +17,23 @@ export default class Member {
         return this.guildMember.id;
     }
 
+    async getXp() {
+        return (await Database.getMember(this)).xp;
+    }
+
     async addXp(quantity: number) {
         await Database.addValueToMember(this, { xp: quantity });
         console.log(`${quantity} xp added to ${this.guildMember.displayName} in ${this.server.name}`);
+    }
+
+    async getRank() {
+        await this.server.members.update();
+        let sortedArray = await Database.getServerMembers(this.server);
+
+        return sortedArray.findIndex(m => m.id === this.id) + 1;
+    }
+
+    async updateMessageCooldown() {
+        await Database.setValueToMember(this, { lastMessageTimestamp: Date.now() });
     }
 }

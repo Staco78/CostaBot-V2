@@ -1,0 +1,9 @@
+[
+    {
+        "command": {
+            "name": "hello",
+            "description": "say coucou to costa"
+        },
+        "reply": "hello !"
+    }
+]

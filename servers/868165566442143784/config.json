@@ -1,11 +1,8 @@
 {
-    "commands": [
-        {
-            "command": {
-                "name": "hello",
-                "description": "say coucou to costa"
-            },
-            "reply": "hi 2 !"
+    "xp": {
+        "text": {
+            "min": 1,
+            "max": 5
         }
-    ]
+    }
 }
