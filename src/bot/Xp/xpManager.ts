@@ -21,7 +21,7 @@ export default class XpManager {
 
     private async addXp(message: Message) {
         if (message.member) {
-            const member = await this.server.members.get(message.member.id);
+            const member = await this.server.members.get(message.member.id as `${bigint}`);
             if (await this.canReceiveXp(member)) {
                 const quantity = Math.round(
                     Math.random() * (this.server.config.xp.text.max - this.server.config.xp.text.min) +

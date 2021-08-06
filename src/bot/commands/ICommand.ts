@@ -2,7 +2,6 @@ import Discord from "discord.js";
 
 import Bot from "../bot";
 import Server from "../server/server";
-import ServerCommand from "./serverCommand";
 
 export default abstract class ICommand {
     command?: Discord.ApplicationCommand;
@@ -33,7 +32,7 @@ export default abstract class ICommand {
     }
 
     private async execPersonalizedCommand(name: string, server: Server, interaction: Discord.CommandInteraction) {
-        let command = await import(`../personalized_commands/${name}.js`);
+        let command = await import(`../personalized_commands/${name}`);
 
         command.exec(this.bot, server, interaction);
     }

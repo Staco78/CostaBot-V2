@@ -1,7 +1,5 @@
 import Server from "../server/server";
 
-import Discord from "discord.js";
-import Bot from "../bot";
 import ICommand from "./ICommand";
 
 export default class ServerCommand extends ICommand {

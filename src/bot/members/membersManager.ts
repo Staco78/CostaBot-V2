@@ -8,11 +8,11 @@ export default class MembersManager {
     constructor(server: Server) {
         this.server = server;
         server.guild.members.fetch().then(members => {
-            this.members = members.array().map(m => new Member(m, server));
+            this.members = members.map(m => new Member(m, server));
         });
     }
 
-    async get(id: `${bigint}`) {
+    async get(id: `${bigint}` | string) {
         let member = this.members.find(m => m.id === id);
         if (member) return member;
 
@@ -24,7 +24,7 @@ export default class MembersManager {
 
     async update() {
         const members = await this.server.guild.members.fetch();
-        this.members = members.array().map(m => new Member(m, this.server));
+        this.members = members.map(m => new Member(m, this.server));
     }
 
     get array() {

@@ -5,7 +5,7 @@ import ServerCommand from "../commands/serverCommand";
 import { join as pathJoin } from "path";
 import MembersManager from "../members/membersManager";
 import { mergeObjects } from "../../utils";
-import XpManager from "../Xp/xpManager";
+import XpManager from "../xp/xpManager";
 
 const serversPath = pathJoin(process.cwd(), "servers");
 

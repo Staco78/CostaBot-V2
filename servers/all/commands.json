@@ -22,7 +22,8 @@
             "description": "test"
         },
         "reply": {
-            "type": 1
+            "type": 0,
+            "content": "test"
         }
     }
 ]
