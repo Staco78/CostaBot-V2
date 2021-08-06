@@ -1,11 +1,8 @@
 import Discord from "discord.js";
 import Server from "./server/server";
-import XpManager from "./Xp/xpManager";
 import GlobalCommand from "./commands/globalCommand";
 import fs from "fs";
 import { join as pathJoin } from "path";
-
-import calcLvl from "./Xp/lvlCalc";
 
 export default class Bot {
     readonly client: Discord.Client<true>;
@@ -24,8 +21,16 @@ export default class Bot {
         this.client.on("ready", async client => {
             console.log("Bot ready");
 
-            new XpManager(this, new Server(this, 664438592093028374n));
-            new XpManager(this, new Server(this, 868165566442143784n));
+            fs.readdirSync(pathJoin(process.cwd(), "servers")).forEach(dir => {
+                if (dir === "all") return;
+                let id: bigint;
+                try {
+                    id = BigInt(dir);
+                } catch (e) {
+                    throw new Error("Wrong server id: " + dir);
+                }
+                new Server(this, id);
+            });
         });
     }
 

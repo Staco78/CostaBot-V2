@@ -12,10 +12,10 @@ export default class XpManager {
         this.bot = bot;
         this.server = server;
 
+        // setInterval(() => this.xpVoc(), 6000);
+
         this.bot.client.on("messageCreate", message => {
             if (message.guild?.id.toString() === this.server.id.toString()) this.addXp(message);
-            // console.log(this.server.id);
-            // console.log(this.server.config);
         });
     }
 
@@ -38,5 +38,11 @@ export default class XpManager {
         const databaseMember = await Database.getMember(member);
 
         return Date.now() - databaseMember.lastMessageTimestamp >= this.server.config.xp.text.cooldown;
+    }
+
+    private async xpVoc() {
+        this.server.members.array.forEach(member =>
+            member.getXp().then(xp => console.log(member.guildMember.displayName, xp))
+        );
     }
 }

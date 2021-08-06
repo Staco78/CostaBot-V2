@@ -2,8 +2,14 @@ type ApplicationCommandData = import("discord.js").ApplicationCommandData;
 type DiscordInteractionReplyOptions = import("discord.js").InteractionReplyOptions;
 
 interface InteractionReplyOptions extends DiscordInteractionReplyOptions {
-    personalized?: boolean;
     name?: string;
+    type: number;
+}
+
+declare const enum InteractionReplyType  {
+    static,
+    interpreted,
+    personalized
 }
 
 interface ServerConfig {

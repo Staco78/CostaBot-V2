@@ -5,6 +5,7 @@ import ServerCommand from "../commands/serverCommand";
 import { join as pathJoin } from "path";
 import MembersManager from "../members/membersManager";
 import { mergeObjects } from "../../utils";
+import XpManager from "../Xp/xpManager";
 
 const serversPath = pathJoin(process.cwd(), "servers");
 
@@ -14,22 +15,23 @@ export default class Server {
     readonly guild: Discord.Guild;
     private commands: ServerCommand[] = [];
     readonly members: MembersManager;
+    private xpManager: XpManager;
     config!: ServerConfig;
     name: string;
 
     constructor(bot: Bot, id: bigint) {
         this._id = id;
         this.bot = bot;
+        this.xpManager = new XpManager(this.bot, this);
         const guild = this.bot.client.guilds.cache.get(`${id}`);
         if (!guild) throw new Error("Guild not found");
         this.guild = guild;
+        this.members = new MembersManager(this);
 
         this.name = guild.name;
 
         this.loadConfig();
         this.loadCommands();
-
-        this.members = new MembersManager(this);
 
         this.bot.client.on("interactionCreate", interaction => {
             if (interaction.isCommand()) {
@@ -56,19 +58,19 @@ export default class Server {
     }
 
     private loadCommands() {
-        let config: ServerCommandsConfig = JSON.parse(
+        let commands: ServerCommandsConfig = JSON.parse(
             fs.readFileSync(`${serversPath}/${this.id}/commands.json`).toString()
         );
 
-        config.forEach(command => {
+        commands.forEach(command => {
             this.commands.push(new ServerCommand(this, command));
         });
 
-        let globalConfig: ServerCommandsConfig = JSON.parse(
+        let globalCommands: ServerCommandsConfig = JSON.parse(
             fs.readFileSync(`${serversPath}/all/commands.json`).toString()
         );
 
-        globalConfig.forEach(command => {
+        globalCommands.forEach(command => {
             this.commands.push(new ServerCommand(this, command));
         });
     }

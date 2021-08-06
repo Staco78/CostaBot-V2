@@ -12,18 +12,17 @@
             ]
         },
         "reply": {
-            "personalized": true,
+            "type": 2,
             "name": "show_xp"
         }
     },
     {
         "command": {
-            "name": "classement",
-            "description": "Le classement de tous les membres du serveur"
+            "name": "test",
+            "description": "test"
         },
         "reply": {
-            "personalized": true,
-            "name": "xp_classement"
+            "type": 1
         }
     }
 ]
