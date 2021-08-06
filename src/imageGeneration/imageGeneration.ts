@@ -15,7 +15,7 @@ export namespace ImageGeneration {
 
             canvas.width = 1110 + (textWidth - 531 > 0 ? textWidth - 531 : 0);
 
-            ctx.fillStyle = "#32353B";
+            ctx.fillStyle = "#23272A";
             ctx.textBaseline = "hanging";
 
             roundedRect(ctx, 0, 0, 1110 + (textWidth - 531 > 0 ? textWidth - 531 : 0), 540, 30);
