@@ -15,21 +15,23 @@ export default abstract class ICommand {
     }
 
     onUsed(server: Server, interaction: Discord.CommandInteraction) {
-        switch (this.replyData.type) {
-            case InteractionReplyType.static:
-                interaction.reply(this.replyData);
-                break;
+        return new Promise<void>((resolve, reject) => {
+            switch (this.replyData.type) {
+                case InteractionReplyType.static:
+                    interaction.reply(this.replyData).catch(reject);
+                    break;
 
-            case InteractionReplyType.interpreted:
-                this.interpretInteractionReply(interaction);
-                break;
+                case InteractionReplyType.interpreted:
+                    this.interpretInteractionReply(interaction).catch(reject);
+                    break;
 
-            case InteractionReplyType.personalized:
-                this.execPersonalizedCommand(this.replyData.name as string, server, interaction);
-                break;
-            default:
-                throw new Error("Unkown interaction reply type");
-        }
+                case InteractionReplyType.personalized:
+                    this.execPersonalizedCommand(this.replyData.name as string, server, interaction).catch(reject);
+                    break;
+                default:
+                    throw new Error("Unkown interaction reply type");
+            }
+        });
     }
 
     private async execPersonalizedCommand(name: string, server: Server, interaction: Discord.CommandInteraction) {

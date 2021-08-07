@@ -36,7 +36,7 @@ export default class Server {
         this.bot.client.on("interactionCreate", interaction => {
             if (interaction.isCommand()) {
                 let command = this.commands.find(c => c.command?.id === interaction.commandId);
-                if (command) command.onUsed(this, interaction);
+                if (command) command.onUsed(this, interaction).catch(reason => interaction.reply({ content: reason.toString() }));
             }
         });
     }
@@ -58,17 +58,13 @@ export default class Server {
     }
 
     private loadCommands() {
-        let commands: ServerCommandsConfig = JSON.parse(
-            fs.readFileSync(`${serversPath}/${this.id}/commands.json`).toString()
-        );
+        let commands: ServerCommandsConfig = JSON.parse(fs.readFileSync(`${serversPath}/${this.id}/commands.json`).toString());
 
         commands.forEach(command => {
             this.commands.push(new ServerCommand(this, command));
         });
 
-        let globalCommands: ServerCommandsConfig = JSON.parse(
-            fs.readFileSync(`${serversPath}/all/commands.json`).toString()
-        );
+        let globalCommands: ServerCommandsConfig = JSON.parse(fs.readFileSync(`${serversPath}/all/commands.json`).toString());
 
         globalCommands.forEach(command => {
             this.commands.push(new ServerCommand(this, command));

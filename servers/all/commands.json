@@ -23,7 +23,7 @@
         },
         "reply": {
             "type": 1,
-            "content": "test  ${json(json())}"
+            "content": "test  ${'dqs dq' json(json(\"coucou\"))}"
         }
     }
 ]

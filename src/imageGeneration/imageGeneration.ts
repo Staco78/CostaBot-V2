@@ -64,48 +64,9 @@ export namespace ImageGeneration {
             }
         });
     }
-
-    export async function generateClassement(members: Member[], page: number): Promise<Buffer> {
-        const canvas = Canvas.createCanvas(1000, 1000);
-        const ctx = canvas.getContext("2d");
-
-        ctx.fillStyle = "rgb(48, 49, 54)";
-        ctx.fillRect(0, 0, 1000, 1000);
-
-        for (let i = 0; i < 8; i++) {
-            let cel = await generateClassementMember(members[0]);
-            if (i % 2 === 0) {
-                var x = 200 / 3;
-                var y = Math.floor(i / 2) * 200 + (i + 1) * 25;
-            } else {
-                var x = 500 + 100 / 3;
-                var y = (Math.floor(i / 2) - 0) * 200 + i * 25;
-            }
-            ctx.drawImage(cel, x, y);
-        }
-
-        return canvas.toBuffer("image/png");
-    }
-
-    async function generateClassementMember(member: Member): Promise<Canvas.Canvas> {
-        const canvas = Canvas.createCanvas(400, 200);
-        const ctx = canvas.getContext("2d");
-
-        ctx.fillStyle = "rgb(255, 255, 255)";
-        ctx.fillRect(0, 0, 400, 200);
-
-        return canvas;
-    }
 }
 
-function roundedRect(
-    ctx: Canvas.NodeCanvasRenderingContext2D,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    radius: number
-) {
+function roundedRect(ctx: Canvas.NodeCanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
     ctx.beginPath();
     ctx.moveTo(x, y + radius);
     ctx.lineTo(x, y + height - radius);
