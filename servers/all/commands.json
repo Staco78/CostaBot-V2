@@ -22,8 +22,8 @@
             "description": "test"
         },
         "reply": {
-            "type": 0,
-            "content": "test"
+            "type": 1,
+            "content": "test  ${json(json())}"
         }
     }
 ]

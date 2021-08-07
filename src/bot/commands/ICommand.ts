@@ -2,6 +2,7 @@ import Discord from "discord.js";
 
 import Bot from "../bot";
 import Server from "../server/server";
+import Interpreter from "./interpreter/interpreter";
 
 export default abstract class ICommand {
     command?: Discord.ApplicationCommand;
@@ -38,7 +39,8 @@ export default abstract class ICommand {
     }
 
     private async interpretInteractionReply(interaction: Discord.CommandInteraction) {
-        console.log(this.replyData);
-        
+        if (!this.replyData.content) throw new Error("Content to reply not found");
+
+        (this.replyData.content.match(/\${[^}]*}/gm) ?? []).forEach(str => new Interpreter(str.slice(2, -1)).exec());
     }
 }
