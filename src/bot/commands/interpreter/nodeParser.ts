@@ -56,7 +56,7 @@ export default class NodeParser {
 }
 
 abstract class Node<T = string> {
-    abstract exec(): T;
+    abstract exec(): Promise<T>;
 
     [util.inspect.custom]() {
         return this.toString();
@@ -112,12 +112,12 @@ class StrNode extends Node {
         }
     }
 
-    exec() {
-        this.execNodes.forEach(node => {
-            const exec = node[1].exec();
+    async exec() {
+        for (const node of this.execNodes) {
+            const exec = await node[1].exec();
 
             this.str = this.str.replace(`\${${node[0]}}`, `${typeof exec === "object" ? JSON.stringify(exec) : exec}`);
-        });
+        }
 
         return this.str;
     }
@@ -128,7 +128,7 @@ class StrNode extends Node {
 }
 
 class NullNode extends Node<null> {
-    exec() {
+    async exec() {
         return null;
     }
 
@@ -149,8 +149,8 @@ class ObjectAccessNode extends Node<any> {
         this.globalObj = globalObj;
     }
 
-    exec() {
-        if (this.content) return this.content.exec()[this.symbolName];
+    async exec() {
+        if (this.content) return (await this.content.exec())[this.symbolName];
         return this.globalObj[this.symbolName];
     }
 
@@ -170,8 +170,8 @@ class FunctionCallNode extends Node<any> {
         this.param = param;
     }
 
-    exec() {
-        return this.object.exec().call(this.param.exec());
+    async exec() {
+        return (await this.object.exec()).call(await this.param.exec());
     }
 
     toString() {

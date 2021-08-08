@@ -43,6 +43,6 @@ export default abstract class ICommand {
     private async interpretInteractionReply(interaction: Discord.CommandInteraction) {
         if (!this.replyData.content) throw new Error("Content to reply not found");
 
-        interaction.reply(new Interpreter(this.replyData.content).exec());
+        interaction.reply(await new Interpreter(this.replyData.content).exec());
     }
 }

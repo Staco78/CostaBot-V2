@@ -1,9 +1,9 @@
 import NodeParser from "./nodeParser";
-import { Token, TokenParser, Tokens } from "./tokens";
+import { Token, Tokens } from "./tokens";
+import fetch from "node-fetch";
 
 export default class Interpreter {
     private text;
-    private tokens: Token[] = [];
     private globalObj: any;
 
     constructor(text: string) {
@@ -14,13 +14,20 @@ export default class Interpreter {
                 call: (str: string) => JSON.parse(str),
                 toString: () => `[Function: json]`,
             },
-            abc: { x: "coucou" },
+            fetch: {
+                call: async (url: string) => {
+                    console.log("fetch", url);
+
+                    return (await fetch(url)).text();
+                },
+                toString: () => "[Function: fetch]",
+            },
         };
     }
 
-    exec(): string {
+    async exec(): Promise<string> {
         const node = new NodeParser([new Token(Tokens.STR, this.text)], this.globalObj).parse();
 
-        return `${node.exec()}`;
+        return `${await node.exec()}`;
     }
 }
