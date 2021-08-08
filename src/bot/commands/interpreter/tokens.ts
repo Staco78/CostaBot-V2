@@ -9,6 +9,10 @@ export class Token {
     }
 
     [util.inspect.custom]() {
+        return this.toString();
+    }
+
+    toString() {
         if (this.value) return `${this.token}:${this.value}`;
         return this.token;
     }
@@ -27,6 +31,7 @@ export class TokenParser {
 
     makeTokens(): Token[] {
         while (this.current_char) {
+            
             if (this.current_char === " ") this.advance();
             else if (this.current_char.match(/[a-z]/i)) this.tokens.push(this.detectWord());
             else if (this.current_char === "(") {
@@ -70,7 +75,7 @@ export class TokenParser {
             this.advance();
         }
 
-        if (!this.current_char) throw new Error("String not finished");
+        if (!this.current_char) throw new Error("String not finished " + str + " " + this.text);
         this.advance();
 
         return new Token(Tokens.STR, str);
@@ -81,6 +86,6 @@ export const Tokens = {
     WORD: "WORD",
     LEFT_PARENT: "(",
     RIGHT_PARENT: ")",
-    DOT: ".",
+    DOT: "DOT",
     STR: "STR",
 };

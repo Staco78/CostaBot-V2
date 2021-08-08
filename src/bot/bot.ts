@@ -3,7 +3,6 @@ import Server from "./server/server";
 import GlobalCommand from "./commands/globalCommand";
 import fs from "fs";
 import { join as pathJoin } from "path";
-import Interpreter from "./commands/interpreter/interpreter";
 
 export default class Bot {
     readonly client: Discord.Client<true>;
@@ -15,11 +14,10 @@ export default class Bot {
         this.client = new Discord.Client({
             intents: ["GUILDS", "GUILD_MESSAGES", "GUILD_MEMBERS", "DIRECT_MESSAGE_REACTIONS"],
         });
-        // this.client.login(token);
+
+        this.client.login(token);
 
         this.config = JSON.parse(fs.readFileSync(pathJoin(process.cwd(), "servers/all/config.json")).toString());
-
-        new Interpreter("json('{\"x\": 3}')").exec();
 
         this.client.on("ready", async client => {
             console.log("Bot ready");

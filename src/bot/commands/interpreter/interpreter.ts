@@ -4,25 +4,23 @@ import { Token, TokenParser, Tokens } from "./tokens";
 export default class Interpreter {
     private text;
     private tokens: Token[] = [];
+    private globalObj: any;
 
     constructor(text: string) {
         this.text = text;
+
+        this.globalObj = {
+            json: {
+                call: (str: string) => JSON.parse(str),
+                toString: () => `[Function: json]`,
+            },
+            abc: { x: "coucou" },
+        };
     }
 
-    exec() {
-        this.makeTokens();
+    exec(): string {
+        const node = new NodeParser([new Token(Tokens.STR, this.text)], this.globalObj).parse();
 
-        console.log(this.tokens);
-
-        const node = new NodeParser(this.tokens).parse();
-
-        console.log(node);
-        
-        console.log(node.exec());
-        
-    }
-
-    private makeTokens() {
-        this.tokens = new TokenParser(this.text).makeTokens();
+        return `${node.exec()}`;
     }
 }

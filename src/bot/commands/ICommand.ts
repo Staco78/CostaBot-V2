@@ -43,6 +43,6 @@ export default abstract class ICommand {
     private async interpretInteractionReply(interaction: Discord.CommandInteraction) {
         if (!this.replyData.content) throw new Error("Content to reply not found");
 
-        (this.replyData.content.match(/\${[^}]*}/gm) ?? []).forEach(str => new Interpreter(str.slice(2, -1)).exec());
+        interaction.reply(new Interpreter(this.replyData.content).exec());
     }
 }

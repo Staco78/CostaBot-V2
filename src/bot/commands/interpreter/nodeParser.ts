@@ -1,13 +1,15 @@
-import { Token, Tokens } from "./tokens";
+import { Token, TokenParser, Tokens } from "./tokens";
 import util from "util";
 
 export default class NodeParser {
     private tokens: Token[];
     private current_token!: Token;
     private pos = -1;
+    private globalObj: any;
 
-    constructor(tokens: Token[]) {
+    constructor(tokens: Token[], globalObj: any) {
         this.tokens = tokens;
+        this.globalObj = globalObj;
         this.advance();
     }
 
@@ -19,14 +21,11 @@ export default class NodeParser {
     parse(): Node<any> {
         switch (this.current_token.token) {
             case Tokens.STR:
-                return new StrNode(this.current_token.value);
+                const node = new StrNode(this.current_token.value, this.globalObj);
+                this.advance();
+                return node;
             case Tokens.WORD:
-                switch (this.current_token.value) {
-                    case "json":
-                        return this.detectJson();
-                    default:
-                        throw new Error(`${this.current_token.value} is not defined`);
-                }
+                return this.detectObjectAccess();
             case Tokens.RIGHT_PARENT:
                 return new NullNode();
             default:
@@ -34,80 +33,148 @@ export default class NodeParser {
         }
     }
 
-    private detectJson(): JsonNode {
-        this.advance();
-        if (this.current_token.token !== Tokens.LEFT_PARENT) throw new Error("Missing parentheses");
-
+    private detectObjectAccess(): Node<any> {
+        let node: Node<any> = new ObjectAccessNode(null, this.current_token.value, this.globalObj);
         this.advance();
 
-        if (this.current_token.token === Tokens.RIGHT_PARENT) return new JsonNode(new NullNode());
+        while (this.current_token && (this.current_token.token === Tokens.DOT || this.current_token.token === Tokens.LEFT_PARENT)) {
+            if (this.current_token.token === Tokens.DOT) {
+                this.advance();
 
-        const content = this.parse();
+                node = new ObjectAccessNode(node, this.current_token.value, this.globalObj);
+                this.advance();
+            } else {
+                this.advance();
+                const param = this.parse();
+                node = new FunctionCallNode(node, param);
+                this.advance();
+            }
+        }
 
-        this.advance();
-
-        if (this.current_token.token !== Tokens.RIGHT_PARENT) throw new Error("Missing parentheses");
-
-        return new JsonNode(content);
+        return node;
     }
 }
 
-export abstract class Node<T = string> {
+abstract class Node<T = string> {
     abstract exec(): T;
-}
-
-export class StrNode extends Node {
-    value: string;
-    constructor(value: string) {
-        super();
-
-        this.value = value;
-    }
-
-    exec() {
-        return this.value;
-    }
 
     [util.inspect.custom]() {
         return this.toString();
     }
-
-    toString() {
-        return `"${this.value}"`;
-    }
 }
 
-export class JsonNode extends Node<object> {
-    content: Node<any>;
-    constructor(content: Node<any>) {
+class StrNode extends Node {
+    private str: string;
+    private execNodes: [string, Node<any>][] = [];
+    private globalObj: any;
+
+    constructor(str: string, globalObj: any) {
         super();
 
-        this.content = content;
+        this.str = str;
+        this.globalObj = globalObj;
+
+        if (this.str.match(/\${[^}]*}/gm)) {
+            let execStr = "";
+            let execsStr: string[] = [];
+            let strMode: null | string = null;
+            let execMode = false;
+            let i = 0;
+            while (this.str[i]) {
+                if (this.str[i].match(/["'`]/g)) {
+                    if (execMode) {
+                        if (strMode && this.str[i] === strMode) strMode = null;
+                        else if (!strMode) strMode = this.str[i];
+                    }
+                    i++;
+                } else if (this.str[i] === "$") {
+                    if (!strMode && !execMode) {
+                        i++;
+                        if (this.str[i] === "{") execMode = true;
+                    }
+                    i++;
+                } else i++;
+
+                if (execMode) {
+                    if (this.str[i] === "}" && !strMode) {
+                        execMode = false;
+                        execsStr.push(execStr);
+                        execStr = "";
+                        i++;
+                    } else execStr += this.str[i];
+                }
+            }
+
+            execsStr.forEach(str => {
+                const tokens = new TokenParser(str).makeTokens();
+                this.execNodes.push([str, new NodeParser(tokens, this.globalObj).parse()]);
+            });
+        }
     }
 
     exec() {
-        return JSON.parse(`${this.content.exec()}`);
-    }
+        this.execNodes.forEach(node => {
+            const exec = node[1].exec();
 
-    [util.inspect.custom]() {
-        return this.toString();
+            this.str = this.str.replace(`\${${node[0]}}`, `${typeof exec === "object" ? JSON.stringify(exec) : exec}`);
+        });
+
+        return this.str;
     }
 
     toString() {
-        return `JSON(${this.content})`;
+        return `"${this.str}"`;
     }
 }
 
-export class NullNode extends Node<null> {
+class NullNode extends Node<null> {
     exec() {
         return null;
     }
 
-    [util.inspect.custom]() {
-        return this.toString();
+    toString() {
+        return "null";
+    }
+}
+
+class ObjectAccessNode extends Node<any> {
+    private content: Node<any> | null;
+    private symbolName: string;
+    private globalObj: any;
+
+    constructor(content: Node<any> | null, symbol: string, globalObj: any) {
+        super();
+        this.content = content;
+        this.symbolName = symbol;
+        this.globalObj = globalObj;
+    }
+
+    exec() {
+        if (this.content) return this.content.exec()[this.symbolName];
+        return this.globalObj[this.symbolName];
     }
 
     toString() {
-        return "null";
+        if (this.content) return `${this.content}.${this.symbolName}`;
+        return `${this.symbolName}`;
+    }
+}
+
+class FunctionCallNode extends Node<any> {
+    private object: Node<any>;
+    private param: Node<any>;
+
+    constructor(object: Node<any>, param: Node<any>) {
+        super();
+        this.object = object;
+        this.param = param;
+    }
+
+    exec() {
+        return this.object.exec().call(this.param.exec());
+    }
+
+    toString() {
+        return `${this.object}(${this.param})`;
     }
 }
