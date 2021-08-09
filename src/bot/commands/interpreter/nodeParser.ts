@@ -21,7 +21,7 @@ export default class NodeParser {
     parse(): Node<any> {
         switch (this.current_token.token) {
             case Tokens.STR:
-                const node = new StrNode(this.current_token.value, this.globalObj);
+                const node = new StrNode(this.current_token.value as string, this.globalObj);
                 this.advance();
                 return node;
             case Tokens.WORD:
@@ -34,16 +34,23 @@ export default class NodeParser {
     }
 
     private detectObjectAccess(): Node<any> {
-        let node: Node<any> = new ObjectAccessNode(null, this.current_token.value, this.globalObj);
+        let node: Node<any> = new ObjectAccessNode(null, this.current_token.value as string, this.globalObj);
         this.advance();
 
-        while (this.current_token && (this.current_token.token === Tokens.DOT || this.current_token.token === Tokens.LEFT_PARENT)) {
+        while (this.current_token && (this.current_token.token === Tokens.DOT || this.current_token.token === Tokens.LEFT_PARENT || this.current_token.token === Tokens.LEFT_BRACKET)) {
             if (this.current_token.token === Tokens.DOT) {
                 this.advance();
 
-                node = new ObjectAccessNode(node, this.current_token.value, this.globalObj);
+                node = new ObjectAccessNode(node, this.current_token.value as string, this.globalObj);
                 this.advance();
-            } else {
+            } else if (this.current_token.token === Tokens.LEFT_BRACKET) {
+                this.advance();
+                if (this.current_token.token !== Tokens.INT) throw new Error(`Unkown token ${this.current_token}`);
+                node = new ObjectAccessNode(node, parseInt(this.current_token.value as string) as any, this.globalObj);
+                this.advance();
+                if (this.current_token.token !== Tokens.RIGHT_BRACKET) throw new Error(`Unkown token ${this.current_token}`);
+                this.advance();
+            } else if (this.current_token.token === Tokens.LEFT_PARENT) {
                 this.advance();
                 const param = this.parse();
                 node = new FunctionCallNode(node, param);
@@ -138,7 +145,7 @@ class NullNode extends Node<null> {
 }
 
 class ObjectAccessNode extends Node<any> {
-    private content: Node<any> | null;
+    content: Node<any> | null;
     private symbolName: string;
     private globalObj: any;
 

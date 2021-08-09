@@ -25,5 +25,32 @@
             "type": 1,
             "content": "${json(fetch('https://foodish-api.herokuapp.com/api')).image}"
         }
+    },
+    {
+        "command": {
+            "name": "avatar",
+            "description": "Ton avatar"
+        },
+        "reply": {
+            "type": 1,
+            "content": "${user.displayAvatarURL}"
+        }
+    },
+    {
+        "command": {
+            "name": "test",
+            "description": "test",
+            "options": [
+                {
+                    "type": 4,
+                    "name": "user",
+                    "description": "user"
+                }
+            ]
+        },
+        "reply": {
+            "type": 1,
+            "content": "${args[0].value}"
+        }
     }
 ]

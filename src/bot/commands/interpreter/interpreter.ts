@@ -1,27 +1,25 @@
 import NodeParser from "./nodeParser";
 import { Token, Tokens } from "./tokens";
 import fetch from "node-fetch";
+import { CommandInteraction } from "discord.js";
 
 export default class Interpreter {
     private text;
     private globalObj: any;
 
-    constructor(text: string) {
+    constructor(text: string, interaction: CommandInteraction) {
         this.text = text;
 
         this.globalObj = {
-            json: {
-                call: (str: string) => JSON.parse(str),
-                toString: () => `[Function: json]`,
-            },
-            fetch: {
-                call: async (url: string) => {
-                    console.log("fetch", url);
+            json: (str: string) => JSON.parse(str),
 
-                    return (await fetch(url)).text();
-                },
-                toString: () => "[Function: fetch]",
+            fetch: async (url: string) => {
+                console.log("fetch", url);
+
+                return (await fetch(url)).text();
             },
+            args: interaction.options.data,
+            user: JSON.parse(JSON.stringify(interaction.user)),
         };
     }
 

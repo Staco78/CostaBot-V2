@@ -2,8 +2,8 @@ import util from "util";
 
 export class Token {
     readonly token;
-    readonly value: any;
-    constructor(token: string, value: any = null) {
+    readonly value: string | null;
+    constructor(token: string, value: string | null = null) {
         this.token = token;
         this.value = value;
     }
@@ -31,7 +31,6 @@ export class TokenParser {
 
     makeTokens(): Token[] {
         while (this.current_char) {
-            
             if (this.current_char === " ") this.advance();
             else if (this.current_char.match(/[a-z]/i)) this.tokens.push(this.detectWord());
             else if (this.current_char === "(") {
@@ -44,6 +43,13 @@ export class TokenParser {
                 this.tokens.push(new Token(Tokens.DOT));
                 this.advance();
             } else if (this.current_char.match(/["'`]/)) this.tokens.push(this.detectString());
+            else if (this.current_char === "[") {
+                this.tokens.push(new Token(Tokens.LEFT_BRACKET));
+                this.advance();
+            } else if (this.current_char === "]") {
+                this.tokens.push(new Token(Tokens.RIGHT_BRACKET));
+                this.advance();
+            } else if (this.current_char.match(/[0-9]/)) this.tokens.push(this.detectInt());
             else throw new Error(`Unkown token "${this.current_char}"`);
         }
 
@@ -80,6 +86,18 @@ export class TokenParser {
 
         return new Token(Tokens.STR, str);
     }
+
+    private detectInt(): Token {
+        let str = this.current_char;
+        this.advance();
+
+        while (this.current_char && this.current_char.match(/[0-9]/)) {
+            str += this.current_char;
+            this.advance();
+        }
+
+        return new Token(Tokens.INT, str);
+    }
 }
 
 export const Tokens = {
@@ -88,4 +106,7 @@ export const Tokens = {
     RIGHT_PARENT: ")",
     DOT: "DOT",
     STR: "STR",
+    LEFT_BRACKET: "[",
+    RIGHT_BRACKET: "]",
+    INT: "INT",
 };
