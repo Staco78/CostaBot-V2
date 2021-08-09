@@ -38,19 +38,12 @@
     },
     {
         "command": {
-            "name": "test",
-            "description": "test",
-            "options": [
-                {
-                    "type": 4,
-                    "name": "user",
-                    "description": "user"
-                }
-            ]
+            "name": "joke",
+            "description": "Oh, une blague drole"
         },
         "reply": {
             "type": 1,
-            "content": "${args[0].value}"
+            "content": "${fetch('https://v2.jokeapi.dev/joke/Programming?format=txt')}"
         }
     }
 ]

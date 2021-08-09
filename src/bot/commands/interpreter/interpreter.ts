@@ -13,11 +13,8 @@ export default class Interpreter {
         this.globalObj = {
             json: (str: string) => JSON.parse(str),
 
-            fetch: async (url: string) => {
-                console.log("fetch", url);
-
-                return (await fetch(url)).text();
-            },
+            fetch: async (url: string) => (await fetch(url)).text(),
+            
             args: interaction.options.data,
             user: JSON.parse(JSON.stringify(interaction.user)),
         };

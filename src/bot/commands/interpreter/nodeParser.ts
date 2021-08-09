@@ -40,7 +40,6 @@ export default class NodeParser {
         while (this.current_token && (this.current_token.token === Tokens.DOT || this.current_token.token === Tokens.LEFT_PARENT || this.current_token.token === Tokens.LEFT_BRACKET)) {
             if (this.current_token.token === Tokens.DOT) {
                 this.advance();
-
                 node = new ObjectAccessNode(node, this.current_token.value as string, this.globalObj);
                 this.advance();
             } else if (this.current_token.token === Tokens.LEFT_BRACKET) {
@@ -121,10 +120,12 @@ class StrNode extends Node {
 
     async exec() {
         for (const node of this.execNodes) {
+
             const exec = await node[1].exec();
 
             this.str = this.str.replace(`\${${node[0]}}`, `${typeof exec === "object" ? JSON.stringify(exec) : exec}`);
         }
+
 
         return this.str;
     }
@@ -178,7 +179,7 @@ class FunctionCallNode extends Node<any> {
     }
 
     async exec() {
-        return (await this.object.exec()).call(await this.param.exec());
+        return (await this.object.exec())(await this.param.exec())
     }
 
     toString() {
