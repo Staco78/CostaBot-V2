@@ -3,17 +3,15 @@ import Server from "./server/server";
 import GlobalCommand from "./commands/globalCommand";
 import fs from "fs";
 import { join as pathJoin } from "path";
-import Interpreter from "./commands/interpreter/interpreter";
 
 export default class Bot {
     readonly client: Discord.Client<true>;
 
-    private commands: GlobalCommand[] = [];
     readonly config: ServerConfig;
 
     constructor(token: string) {
         this.client = new Discord.Client({
-            intents: ["GUILDS", "GUILD_MESSAGES", "GUILD_MEMBERS", "DIRECT_MESSAGE_REACTIONS"],
+            intents: ["GUILDS", "GUILD_MESSAGES", "GUILD_MEMBERS", "DIRECT_MESSAGE_REACTIONS", "GUILD_VOICE_STATES"],
         });
 
 

@@ -6,10 +6,10 @@ interface InteractionReplyOptions extends DiscordInteractionReplyOptions {
     type: number;
 }
 
-declare const enum InteractionReplyType  {
+declare const enum InteractionReplyType {
     static,
     interpreted,
-    personalized
+    personalized,
 }
 
 interface ServerConfig {
@@ -18,6 +18,11 @@ interface ServerConfig {
             min: number;
             max: number;
             cooldown: number;
+        };
+        voc: {
+            min: number;
+            max: number;
+            timer: number;
         };
     };
 }

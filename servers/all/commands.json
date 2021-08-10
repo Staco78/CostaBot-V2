@@ -6,7 +6,7 @@
             "options": [
                 {
                     "type": 9,
-                    "name": "de",
+                    "name": "user",
                     "description": "Voir l'xp d'une personne"
                 }
             ]

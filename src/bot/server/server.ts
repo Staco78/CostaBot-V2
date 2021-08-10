@@ -4,8 +4,8 @@ import Bot from "../bot";
 import ServerCommand from "../commands/serverCommand";
 import { join as pathJoin } from "path";
 import MembersManager from "../members/membersManager";
-import { mergeObjects } from "../../utils";
 import XpManager from "../xp/xpManager";
+import Utils from "../../utils";
 
 const serversPath = pathJoin(process.cwd(), "servers");
 
@@ -22,16 +22,18 @@ export default class Server {
     constructor(bot: Bot, id: bigint) {
         this._id = id;
         this.bot = bot;
-        this.xpManager = new XpManager(this.bot, this);
+
         const guild = this.bot.client.guilds.cache.get(`${id}`);
         if (!guild) throw new Error("Guild not found");
         this.guild = guild;
-        this.members = new MembersManager(this);
-
         this.name = guild.name;
+
+        this.members = new MembersManager(this);
 
         this.loadConfig();
         this.loadCommands();
+
+        this.xpManager = new XpManager(this.bot, this);
 
         this.bot.client.on("interactionCreate", interaction => {
             if (interaction.isCommand()) {
@@ -52,7 +54,7 @@ export default class Server {
 
         let config2 = JSON.parse(JSON.stringify(globalConfig));
 
-        mergeObjects(config2, config);
+        Utils.mergeObjects(config2, config);
 
         this.config = config2;
     }

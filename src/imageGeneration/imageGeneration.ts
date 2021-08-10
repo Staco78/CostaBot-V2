@@ -1,5 +1,4 @@
 import Canvas from "canvas";
-import Member from "../bot/members/member";
 
 export namespace ImageGeneration {
     Canvas.registerFont(process.cwd() + "/assets/font/arial-unicode-ms.ttf", { family: "myFont" });
