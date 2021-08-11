@@ -24,6 +24,7 @@ interface ServerConfig {
             max: number;
             timer: number;
         };
+        lvlPassedChannel: string;
     };
 }
 

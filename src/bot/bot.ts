@@ -14,13 +14,14 @@ export default class Bot {
             intents: ["GUILDS", "GUILD_MESSAGES", "GUILD_MEMBERS", "DIRECT_MESSAGE_REACTIONS", "GUILD_VOICE_STATES"],
         });
 
-
         this.client.login(token);
 
         this.config = JSON.parse(fs.readFileSync(pathJoin(process.cwd(), "servers/all/config.json")).toString());
 
         this.client.on("ready", async client => {
             console.log("Bot ready");
+
+            // this.deleteAllCommands();
 
             fs.readdirSync(pathJoin(process.cwd(), "servers")).forEach(dir => {
                 if (dir === "all") return;

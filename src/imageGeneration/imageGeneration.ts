@@ -1,6 +1,6 @@
 import Canvas from "canvas";
 
-export namespace ImageGeneration {
+namespace ImageGeneration {
     Canvas.registerFont(process.cwd() + "/assets/font/arial-unicode-ms.ttf", { family: "myFont" });
 
     export async function showXp(options: ImageGenerationShowXpData): Promise<Buffer> {
@@ -63,6 +63,8 @@ export namespace ImageGeneration {
             }
         });
     }
+
+    export function lvlPass(options: {}) {}
 }
 
 function roundedRect(ctx: Canvas.NodeCanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
@@ -78,3 +80,5 @@ function roundedRect(ctx: Canvas.NodeCanvasRenderingContext2D, x: number, y: num
     ctx.arcTo(x, y, x, y + radius, radius);
     ctx.fill();
 }
+
+export default ImageGeneration;

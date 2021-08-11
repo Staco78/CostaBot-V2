@@ -45,5 +45,15 @@
             "type": 1,
             "content": "${fetch('https://v2.jokeapi.dev/joke/Programming?format=txt')}"
         }
+    },
+    {
+        "command": {
+            "name": "cat",
+            "description": "Miaou"
+        },
+        "reply": {
+            "type": 1,
+            "content": "https://cataas.com${json(fetch('https://cataas.com/cat?json=true')).url}"
+        }
     }
 ]

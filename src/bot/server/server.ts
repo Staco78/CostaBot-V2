@@ -15,7 +15,7 @@ export default class Server {
     readonly guild: Discord.Guild;
     private commands: ServerCommand[] = [];
     readonly members: MembersManager;
-    private xpManager: XpManager;
+    private xpManager!: XpManager;
     config!: ServerConfig;
     name: string;
 
@@ -31,15 +31,17 @@ export default class Server {
         this.members = new MembersManager(this);
 
         this.loadConfig();
-        this.loadCommands();
+        this.checkConfig().then(() => {
+            this.loadCommands();
 
-        this.xpManager = new XpManager(this.bot, this);
+            this.xpManager = new XpManager(this.bot, this);
 
-        this.bot.client.on("interactionCreate", interaction => {
-            if (interaction.isCommand()) {
-                let command = this.commands.find(c => c.command?.id === interaction.commandId);
-                if (command) command.onUsed(this, interaction).catch(reason => interaction.reply({ content: reason.toString() }));
-            }
+            this.bot.client.on("interactionCreate", interaction => {
+                if (interaction.isCommand()) {
+                    let command = this.commands.find(c => c.command?.id === interaction.commandId);
+                    if (command) command.onUsed(this, interaction).catch(reason => interaction.reply({ content: reason.toString() }));
+                }
+            });
         });
     }
 
@@ -71,5 +73,27 @@ export default class Server {
         globalCommands.forEach(command => {
             this.commands.push(new ServerCommand(this, command));
         });
+    }
+
+    private async checkConfig() {
+        if (!this.config.xp) throw new Error("Server config: missing xp");
+
+        if (!this.config.xp.text) throw new Error("Server config: missing xp.text");
+        if (!this.config.xp.text.min) throw new Error("Server config: missing xp.text.min");
+        if (!this.config.xp.text.max) throw new Error("Server config: missing xp.text.max");
+        if (!this.config.xp.text.cooldown) throw new Error("Server config: missing xp.text.cooldown");
+
+        if (!this.config.xp.voc) throw new Error("Server config: missing xp.voc");
+        if (!this.config.xp.voc.min) throw new Error("Server config: missing xp.voc.min");
+        if (!this.config.xp.voc.max) throw new Error("Server config: missing xp.voc.max");
+        if (!this.config.xp.voc.timer) throw new Error("Server config: missing xp.voc.timer");
+
+        if (!this.config.xp.lvlPassedChannel) throw new Error("Server config: missing xp.lvlPassedChannel");
+
+        const channel = this.guild.channels.cache.get(this.config.xp.lvlPassedChannel);
+
+        if (!channel) throw new Error("Server config: xp level channel not found");
+
+        if (!channel.isText()) throw new Error("Server config: xp level channel is not text channel");
     }
 }

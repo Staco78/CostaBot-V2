@@ -1,14 +1,13 @@
 import Discord from "discord.js";
 import { Database } from "../../data/database";
-import { ImageGeneration } from "../../imageGeneration/imageGeneration";
+import ImageGeneration from "../../imageGeneration/imageGeneration";
 import Bot from "../bot";
 import Server from "../server/server";
 import calcLvl, { calcNextLvl, calcXpForLvl } from "../xp/lvlCalc";
 
 export function exec(bot: Bot, server: Server, interaction: Discord.CommandInteraction) {
     interaction.deferReply().then(async () => {
-        if (interaction.options.data[0] && interaction.options.data[0].user)
-            var member = await server.members.get(interaction.options.data[0].user.id);
+        if (interaction.options.data[0] && interaction.options.data[0].user) var member = await server.members.get(interaction.options.data[0].user.id);
         else var member = await server.members.get(interaction.user.id);
         const databaseMember = await Database.getMember(member);
 

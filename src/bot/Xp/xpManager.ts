@@ -13,8 +13,6 @@ export default class XpManager {
         this.bot = bot;
         this.server = server;
 
-        // setInterval(() => this.xpVoc(), 6000);
-
         this.bot.client.on("messageCreate", message => {
             if (message.guild?.id.toString() === this.server.id.toString()) this.addXp(message);
         });
