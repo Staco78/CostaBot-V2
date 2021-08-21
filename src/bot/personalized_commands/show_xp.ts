@@ -3,7 +3,7 @@ import { Database } from "../../data/database";
 import ImageGeneration from "../../imageGeneration/imageGeneration";
 import Bot from "../bot";
 import Server from "../server/server";
-import calcLvl, { calcNextLvl, calcXpForLvl } from "../xp/lvlCalc";
+import calcLvl, { calcNextLvl, calcXpForLvl } from "../../common/maths/lvlCalc";
 
 export function exec(bot: Bot, server: Server, interaction: Discord.CommandInteraction) {
     interaction.deferReply().then(async () => {

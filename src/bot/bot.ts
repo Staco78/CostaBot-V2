@@ -5,11 +5,13 @@ import fs from "fs";
 import { join as pathJoin } from "path";
 
 export default class Bot {
+    readonly servers: Server[] = [];
+
     readonly client: Discord.Client<true>;
 
     readonly config: ServerConfig;
 
-    constructor(token: string) {
+    constructor(token: string, onReady: () => void) {
         this.client = new Discord.Client({
             intents: ["GUILDS", "GUILD_MESSAGES", "GUILD_MEMBERS", "DIRECT_MESSAGE_REACTIONS", "GUILD_VOICE_STATES"],
         });
@@ -19,8 +21,6 @@ export default class Bot {
         this.config = JSON.parse(fs.readFileSync(pathJoin(process.cwd(), "servers/all/config.json")).toString());
 
         this.client.on("ready", async client => {
-            console.log("Bot ready");
-
             // this.deleteAllCommands();
 
             fs.readdirSync(pathJoin(process.cwd(), "servers")).forEach(dir => {
@@ -31,8 +31,11 @@ export default class Bot {
                 } catch (e) {
                     throw new Error("Wrong server id: " + dir);
                 }
-                new Server(this, id);
+                this.servers.push(new Server(this, id));
             });
+
+            console.log("Bot ready");
+            onReady();
         });
     }
 

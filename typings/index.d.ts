@@ -52,3 +52,16 @@ interface ImageGenerationShowXpData {
     level: number;
     rank: number;
 }
+
+interface ServerRanking {
+    users: ServerRankingUser[];
+}
+
+interface ServerRankingUser {
+    id: string;
+    username: string;
+    avatarURL: string;
+    discriminator: string;
+    xp: number;
+    lvl: number;
+}

@@ -1,7 +1,7 @@
 import { Guild, GuildMember } from "discord.js";
 import { Database } from "../../data/database";
 import Server from "../server/server";
-import calcLvl from "../xp/lvlCalc";
+import calcLvl from "../../common/maths/lvlCalc";
 
 export default class Member {
     readonly guildMember: GuildMember;
@@ -37,7 +37,7 @@ export default class Member {
 
     async getRank() {
         await this.server.members.update();
-        let sortedArray = await Database.getServerMembers(this.server);
+        let sortedArray = await Database.getServerMembers(this.server.id);
 
         return sortedArray.findIndex(m => m.id === this.id) + 1;
     }

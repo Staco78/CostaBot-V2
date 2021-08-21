@@ -55,5 +55,22 @@
             "type": 1,
             "content": "https://cataas.com${json(fetch('https://cataas.com/cat?json=true')).url}"
         }
+    },
+    {
+        "command": {
+            "name": "music",
+            "description": "Met de la musique",
+            "options": [
+                {
+                    "type": 3,
+                    "name": "link",
+                    "description": "Le lien youtube de la musique"
+                }
+            ]
+        },
+        "reply": {
+            "type": 2,
+            "name": "music"
+        }
     }
 ]

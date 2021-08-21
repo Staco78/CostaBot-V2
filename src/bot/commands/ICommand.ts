@@ -37,7 +37,7 @@ export default abstract class ICommand {
     private async execPersonalizedCommand(name: string, server: Server, interaction: Discord.CommandInteraction) {
         let command = await import(`../personalized_commands/${name}`);
 
-        command.exec(this.bot, server, interaction);
+        await command.exec(this.bot, server, interaction);
     }
 
     private async interpretInteractionReply(interaction: Discord.CommandInteraction) {

@@ -77,12 +77,11 @@ export namespace Database {
             id: member.id,
             server: member.guild.id,
             xp: 0,
-            name: member.guildMember.displayName,
             lastMessageTimestamp: 0,
         });
     }
 
-    export async function getServerMembers(server: Server): Promise<DatabaseMember[]> {
-        return await memberCollection.find({ server: server.id.toString() }, { sort: { xp: -1 } }).toArray();
+    export async function getServerMembers(serverId: bigint): Promise<DatabaseMember[]> {
+        return await memberCollection.find({ server: serverId.toString() }, { sort: { xp: -1 } }).toArray();
     }
 }
