@@ -6,6 +6,7 @@ import { join as pathJoin } from "path";
 import MembersManager from "../members/membersManager";
 import XpManager from "../xp/xpManager";
 import Utils from "../../utils";
+import { MusicPlayer } from "../personalized_commands/music";
 
 const serversPath = pathJoin(process.cwd(), "servers");
 
@@ -15,9 +16,12 @@ export default class Server {
     readonly guild: Discord.Guild;
     private commands: ServerCommand[] = [];
     readonly members: MembersManager;
+    musicPlayer: MusicPlayer | null = null;
     private xpManager!: XpManager;
     config!: ServerConfig;
     name: string;
+
+    private readonly buttonInteractionEvent: { [event: string]: (interaction: Discord.ButtonInteraction) => void } = {};
 
     constructor(bot: Bot, id: bigint) {
         this._id = id;
@@ -39,7 +43,16 @@ export default class Server {
             this.bot.client.on("interactionCreate", interaction => {
                 if (interaction.isCommand()) {
                     let command = this.commands.find(c => c.command?.id === interaction.commandId);
-                    if (command) command.onUsed(this, interaction).catch((reason: Error) => interaction.reply({ content: reason.toString() }));
+                    if (command)
+                        command.onUsed(this, interaction).catch((reason: Error) => {
+                            if (interaction.replied) interaction.editReply({ content: reason.toString() });
+                            else interaction.reply({ content: reason.toString() });
+                        });
+                } else if (interaction.isButton()) {
+                    if (interaction.guildId === this.id.toString()) {
+                        if (this.buttonInteractionEvent[interaction.customId.split("_")[0]])
+                            this.buttonInteractionEvent[interaction.customId.split("_")[0]](interaction);
+                    }
                 }
             });
         });
@@ -62,13 +75,17 @@ export default class Server {
     }
 
     private loadCommands() {
-        let commands: ServerCommandsConfig = JSON.parse(fs.readFileSync(`${serversPath}/${this.id}/commands.json`).toString());
+        let commands: ServerCommandsConfig = JSON.parse(
+            fs.readFileSync(`${serversPath}/${this.id}/commands.json`).toString()
+        );
 
         commands.forEach(command => {
             this.commands.push(new ServerCommand(this, command));
         });
 
-        let globalCommands: ServerCommandsConfig = JSON.parse(fs.readFileSync(`${serversPath}/all/commands.json`).toString());
+        let globalCommands: ServerCommandsConfig = JSON.parse(
+            fs.readFileSync(`${serversPath}/all/commands.json`).toString()
+        );
 
         globalCommands.forEach(command => {
             this.commands.push(new ServerCommand(this, command));
@@ -95,5 +112,9 @@ export default class Server {
         if (!channel) throw new Error("Server config: xp level channel not found");
 
         if (!channel.isText()) throw new Error("Server config: xp level channel is not text channel");
+    }
+
+    onButtonInteraction(event: string, listener: (interaction: Discord.ButtonInteraction) => void) {
+        this.buttonInteractionEvent[event] = listener;
     }
 }

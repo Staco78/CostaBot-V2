@@ -1,8 +1,17 @@
 import Bot from "../bot";
 import Server from "../server/server";
-import Discord, { GuildMember } from "discord.js";
-import { createAudioPlayer, createAudioResource, joinVoiceChannel, VoiceConnection } from "@discordjs/voice";
+import Discord, { ButtonInteraction, GuildMember, MessageActionRow } from "discord.js";
+import {
+    AudioPlayer,
+    AudioPlayerStatus,
+    createAudioPlayer,
+    createAudioResource,
+    joinVoiceChannel,
+    VoiceConnection,
+} from "@discordjs/voice";
 import ytdl from "ytdl-core";
+import fetch from "node-fetch";
+import config from "../../config";
 
 export async function exec(bot: Bot, server: Server, interaction: Discord.CommandInteraction) {
     await interaction.deferReply();
@@ -13,40 +22,75 @@ export async function exec(bot: Bot, server: Server, interaction: Discord.Comman
         interaction.channel?.send("Impossible de se connecter au salon vocal: type de channel non supporté");
     }
 
-    new MusicPlayer(server, interaction, voiceChannel, interaction.options.data[0]?.value as string);
+    await server.musicPlayer?.destroy();
+
+    server.musicPlayer = new MusicPlayer(
+        server,
+        interaction,
+        reason => {
+            interaction.channel?.send(`${reason}`);
+        },
+        voiceChannel,
+        interaction.options.data[0]?.value as string
+    );
 }
 
-class MusicPlayer {
+export class MusicPlayer {
     private readonly interaction: Discord.CommandInteraction;
     private readonly server: Server;
     private connection: VoiceConnection | null = null;
     private player = createAudioPlayer();
 
+    private history: Music[] = [];
     private playlist: Music[] = [];
     private actualMusic: Music | null = null;
 
-    constructor(server: Server, interaction: Discord.CommandInteraction, voiceChannel?: Discord.VoiceChannel, link?: string) {
+    private reject: (reason: string) => void;
+
+    constructor(
+        server: Server,
+        interaction: Discord.CommandInteraction,
+        reject: (reason: string) => void,
+        voiceChannel?: Discord.VoiceChannel,
+        link?: string
+    ) {
         this.interaction = interaction;
         this.server = server;
+        this.reject = reject;
+
+        this.player.on("stateChange", (oldState, newState) => {
+            if (newState.status === AudioPlayerStatus.Idle && oldState.status !== AudioPlayerStatus.Idle) {
+                this.next();
+                this.play();
+            }
+        });
+
+        this.player.on("error", error => {
+            this.reject("Une erreur inattendue s'est produite\nLa musique se relance");
+            console.log(`${error}\nUnexpected error restart music`);
+
+            this.play();
+        });
 
         (async () => {
             if (voiceChannel) {
                 this.connect(voiceChannel);
                 if (link) {
-                    await this.addMusic(link);
+                    this.playlist = await Utils.parseLink(link);
+                    this.next();
                     await this.play();
                 }
-                this.sendEmbed();
             } else {
                 if (link) {
-                    await this.addMusic(link);
+                    this.playlist = await Utils.parseLink(link);
                 }
-                this.sendEmbed();
             }
-        })();
+            await this.sendEmbed();
+            await this.sendButtons();
+        })().catch(reject);
     }
 
-    private connect(voiceChannel: Discord.VoiceChannel) {
+    private connect(voiceChannel: Discord.VoiceChannel): void {
         this.connection = joinVoiceChannel({
             channelId: voiceChannel.id,
             guildId: this.server.guild.id,
@@ -54,35 +98,80 @@ class MusicPlayer {
         });
 
         this.connection.on("stateChange", (oldState, newState) => {
-            if (newState.status === "disconnected") this.destroy();
+            if (newState.status === "disconnected") {
+                setTimeout(() => {
+                    if (this.connection?.state.status === "disconnected") this.destroy();
+                }, 1000);
+            }
         });
+
+        // this.player.on("error", console.log);
+        // this.player.on("debug", console.log);
+        // this.player.on("stateChange", console.log);
 
         this.connection.subscribe(this.player);
     }
 
-    private destroy() {
+    async destroy() {
         this.player.stop(true);
+        this.player.removeAllListeners();
         if (this.connection?.state.status !== "destroyed") this.connection?.destroy(true);
+        this.connection?.removeAllListeners();
         this.playlist = [];
-        this.interaction.editReply({ content: "Musique terminée", embeds: [] });
-    }
-
-    private async addMusic(link: string) {
-        this.playlist.push(await Music.create(link));
+        await this.interaction.editReply({ content: "Musique terminée", embeds: [], components: [] });
     }
 
     private async play() {
         if (!this.connection) throw new Error("Cannot play before connect");
 
-        const music = this.playlist.shift();
+        if (!this.actualMusic) return;
 
-        if (!music) throw new Error("Aucune musique a lancer");
+        const stream = ytdl.downloadFromInfo(this.actualMusic.infos, {
+            filter: "audioonly",
+            quality: "highestaudio",
+        });
+
+        this.player.play(createAudioResource(stream));
+    }
+
+    private next() {
+        if (this.actualMusic) this.history.push(this.actualMusic);
+
+        this.actualMusic = this.playlist.shift() ?? null;
+
+        this.sendEmbed();
+    }
+
+    private async previous() {
+        const music = this.history.shift();
+        if (!music) throw new Error("No music to play");
+
+        if (this.actualMusic) this.playlist.unshift(this.actualMusic);
 
         this.actualMusic = music;
 
-        const stream = ytdl.downloadFromInfo(this.actualMusic.infos);
+        this.sendEmbed();
+    }
 
-        this.player.play(createAudioResource(stream));
+    private async play_pause(interaction?: Discord.ButtonInteraction) {
+        if (!this.connection && interaction) {
+            const channel = (interaction.member as GuildMember).voice.channel;
+
+            if (channel instanceof Discord.VoiceChannel) {
+                this.connect(channel);
+            }
+            this.play_pause();
+            return;
+        }
+
+        if (this.player.state.status === "playing") {
+            this.player.pause();
+        } else if (this.player.state.status === "paused") {
+            this.player.unpause();
+        } else {
+            if (!this.actualMusic) this.next();
+            this.play();
+        }
     }
 
     private generateEmbed(): Discord.MessageEmbed {
@@ -95,10 +184,14 @@ class MusicPlayer {
             message.setDescription(`[${this.actualMusic.title}](${this.actualMusic.url})`);
             message.setThumbnail(this.actualMusic.thumbnail);
 
-            message.addField("De:", `[${this.actualMusic.author.name}](${this.actualMusic.author.channel_url})`);
+            message.addField("De", `[${this.actualMusic.author.name}](${this.actualMusic.author.channel_url})`, true);
             // message.setAuthor(this.actualMusic.author.name, this.actualMusic.author.thumbnails[0].url);
 
-            message.setFooter(`\nDurée: ${Math.floor(this.actualMusic.length / 60)}:${this.actualMusic.length % 60}\nPLaylist: 1/${this.playlist.length + 1}`);
+            message.setFooter(
+                `\nDurée: ${Math.floor(this.actualMusic.length / 60)}:${this.actualMusic.length % 60}\nPLaylist: 1/${
+                    this.playlist.length + 1
+                }`
+            );
         }
 
         return message;
@@ -107,9 +200,81 @@ class MusicPlayer {
     private async sendEmbed() {
         await this.interaction.editReply({ embeds: [this.generateEmbed()] });
     }
+
+    private async sendButtons() {
+        await this.interaction.editReply({
+            components: [
+                new MessageActionRow({
+                    components: [
+                        new Discord.MessageButton({ customId: "music_previous", style: "SECONDARY", label: "⏮️" }),
+                        new Discord.MessageButton({ customId: "music_play_pause", style: "SECONDARY", label: "⏯️" }),
+                        new Discord.MessageButton({ customId: "music_stop", style: "SECONDARY", label: "⏹️" }),
+                        new Discord.MessageButton({ customId: "music_next", style: "SECONDARY", label: "⏭️" }),
+                        new Discord.MessageButton({ customId: "music_connect", style: "SECONDARY", label: "➕" }),
+                    ],
+                }),
+            ],
+        });
+
+        this.server.onButtonInteraction("music", async interaction => {
+            interaction.deferUpdate().catch(console.log);
+
+            try {
+                await (this as any)[interaction.customId.replace("music", "button")](interaction);
+            } catch (error) {
+                this.reject(error);
+            }
+        });
+    }
+
+    private async button_previous() {
+        await this.previous();
+        await this.play();
+    }
+
+    private async button_next() {
+        this.next();
+        if (this.actualMusic) {
+            if (this.connection) this.play();
+        } else this.player.stop();
+    }
+
+    private button_connect(interaction: ButtonInteraction) {
+        const voiceChannel = (interaction.member as Discord.GuildMember).voice.channel;
+
+        if (!voiceChannel) {
+            this.interaction.channel?.send("Impossible de se connecter: pas dans un salon vocal");
+            return;
+        } else if (voiceChannel instanceof Discord.StageChannel) {
+            this.interaction.channel?.send("Impossible de se connecter au salon vocal: type de channel non supporté");
+            return;
+        }
+
+        this.connect(voiceChannel);
+
+        if (!this.actualMusic) {
+            this.next();
+            this.play();
+        }
+    }
+
+    private async button_stop() {
+        await this.destroy();
+    }
+
+    private async button_play_pause(interaction: ButtonInteraction) {
+        await this.play_pause(interaction);
+    }
 }
 
-type MusicData = { infos: ytdl.videoInfo; url: string; title: string; author: ytdl.Author; length: number; thumbnail: string };
+type MusicData = {
+    infos: ytdl.videoInfo;
+    url: string;
+    title: string;
+    author: ytdl.Author;
+    length: number;
+    thumbnail: string;
+};
 
 class Music {
     readonly infos: ytdl.videoInfo;
@@ -141,5 +306,77 @@ class Music {
         };
 
         return new Music(data);
+    }
+}
+
+namespace Utils {
+    export async function parseLink(link: string): Promise<Music[]> {
+        // https://www.youtube.com/watch?v=OqeuWoIWCvM
+        // https://youtu.be/OqeuWoIWCvM
+        // https://www.youtube.com/playlist?list=PLD7SPvDoEddadenVZYBvq0uqSN1RRmFol
+        // https://www.youtube.com/watch?v=mUTsvbridvM&list=PLD7SPvDoEddadenVZYBvq0uqSN1RRmFol
+
+        const url = new URL(link);
+
+        if (url.host === "www.youtube.com" || url.host === "music.youtube.com") {
+            if (url.pathname === "/watch") {
+                const playlistId = url.searchParams.get("list");
+                if (playlistId) {
+                    return await getPlaylist(playlistId);
+                } else {
+                    return [await Music.create(link)];
+                }
+            } else if (url.pathname === "/playlist") {
+                const id = url.searchParams.get("list");
+                if (!id) throw new Error("Invalid link");
+                return await getPlaylist(id);
+            } else throw new Error("Invalid link");
+        } else if (url.host === "youtu.be") {
+            return [await Music.create(`https://youtube.com/watch?v=${url.pathname.slice(1, url.pathname.length)}`)];
+        } else throw new Error("Invalid link");
+    }
+
+    async function getPlaylist(id: string): Promise<Music[]> {
+        const musics: Music[] = [];
+        const response = await fetch(
+            `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${id}&maxResults=50&key=${config.googleApiKey}`
+        );
+
+        let json = await response.json();
+
+        // return await parsePlaylistResult(json);
+
+        while (1) {
+            musics.push(...(await parsePlaylistResult(json)));
+
+            if (!json.nextPageToken) break;
+
+            json = await getPlaylistPage(id, json.nextPageToken);
+        }
+
+        return musics;
+    }
+
+    async function getPlaylistPage(id: string, pageToken: string) {
+        const response = await fetch(
+            `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${id}&maxResults=50&pageToken=${pageToken}&key=${config.googleApiKey}`
+        );
+
+        const json = await response.json();
+
+        return json;
+    }
+
+    async function parsePlaylistResult(json: any): Promise<Music[]> {
+        const musics: Music[] = [];
+
+        for (const item of json.items) {
+            const url = `https://youtube.com/watch?v=${item.snippet.resourceId.videoId}`;
+            try {
+                musics.push(await Music.create(url));
+            } catch (e) {}
+        }
+
+        return musics;
     }
 }
