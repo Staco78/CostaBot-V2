@@ -1,8 +1,7 @@
 import Bot from "../bot";
 import Server from "../server/server";
-import Discord, { ButtonInteraction, GuildMember, MessageActionRow } from "discord.js";
+import Discord, { ButtonInteraction, GuildMember, MessageActionRow, Util } from "discord.js";
 import {
-    AudioPlayer,
     AudioPlayerStatus,
     createAudioPlayer,
     createAudioResource,
@@ -22,22 +21,30 @@ export async function exec(bot: Bot, server: Server, interaction: Discord.Comman
         interaction.channel?.send("Impossible de se connecter au salon vocal: type de channel non supporté");
     }
 
-    await server.musicPlayer?.destroy();
+    if (server.musicPlayer) {
+        if (interaction.options.data[0].value && typeof interaction.options.data[0].value === "string") {
+            const msg = await server.musicPlayer.addMusic(interaction.options.data[0].value);
+            interaction.editReply(msg);
+        }
+    } else {
+        await interaction.editReply("Je lance la musique");
 
-    server.musicPlayer = new MusicPlayer(
-        server,
-        interaction,
-        reason => {
-            interaction.channel?.send(`${reason}`);
-        },
-        voiceChannel,
-        interaction.options.data[0]?.value as string
-    );
+        server.musicPlayer = new MusicPlayer(
+            server,
+            interaction,
+            reason => {
+                interaction.channel?.send(`${reason}`);
+            },
+            voiceChannel,
+            interaction.options.data[0]?.value as string
+        );
+    }
 }
 
 export class MusicPlayer {
     private readonly interaction: Discord.CommandInteraction;
     private readonly server: Server;
+    private message!: Discord.Message;
     private connection: VoiceConnection | null = null;
     private player = createAudioPlayer();
 
@@ -73,6 +80,8 @@ export class MusicPlayer {
         });
 
         (async () => {
+            this.message = (await interaction.channel?.send("Chargement...")) as Discord.Message;
+
             if (voiceChannel) {
                 this.connect(voiceChannel);
                 if (link) {
@@ -118,7 +127,8 @@ export class MusicPlayer {
         if (this.connection?.state.status !== "destroyed") this.connection?.destroy(true);
         this.connection?.removeAllListeners();
         this.playlist = [];
-        await this.interaction.editReply({ content: "Musique terminée", embeds: [], components: [] });
+        await this.message.edit({ content: "Musique terminée", embeds: [], components: [] });
+        this.server.musicPlayer = null;
     }
 
     private async play() {
@@ -129,9 +139,25 @@ export class MusicPlayer {
         const stream = ytdl.downloadFromInfo(this.actualMusic.infos, {
             filter: "audioonly",
             quality: "highestaudio",
+            dlChunkSize: 0,
+            highWaterMark: 1 << 25,
         });
 
         this.player.play(createAudioResource(stream));
+    }
+
+    async addMusic(link: string): Promise<string> {
+        const musics: Music[] = await Utils.parseLink(link);
+        this.playlist.push(...musics);
+
+        if (!this.actualMusic) {
+            this.next();
+            this.play();
+        } else this.sendEmbed();
+
+        if (musics.length === 0) return `Aucune musique n'a été ajouté`;
+        if (musics.length === 1) return `Une musique a été ajouté`;
+        return `${musics.length} musique ont été ajoutés`;
     }
 
     private next() {
@@ -143,7 +169,7 @@ export class MusicPlayer {
     }
 
     private async previous() {
-        const music = this.history.shift();
+        const music = this.history.pop();
         if (!music) throw new Error("No music to play");
 
         if (this.actualMusic) this.playlist.unshift(this.actualMusic);
@@ -188,9 +214,9 @@ export class MusicPlayer {
             // message.setAuthor(this.actualMusic.author.name, this.actualMusic.author.thumbnails[0].url);
 
             message.setFooter(
-                `\nDurée: ${Math.floor(this.actualMusic.length / 60)}:${this.actualMusic.length % 60}\nPLaylist: 1/${
-                    this.playlist.length + 1
-                }`
+                `\nDurée: ${Math.floor(this.actualMusic.length / 60)}:${this.actualMusic.length % 60}\nPLaylist: ${
+                    this.history.length + 1
+                }/${this.playlist.length + this.history.length + 1}`
             );
         }
 
@@ -198,11 +224,11 @@ export class MusicPlayer {
     }
 
     private async sendEmbed() {
-        await this.interaction.editReply({ embeds: [this.generateEmbed()] });
+        await this.message.edit({ content: "_ _", embeds: [this.generateEmbed()] });
     }
 
     private async sendButtons() {
-        await this.interaction.editReply({
+        await this.message.edit({
             components: [
                 new MessageActionRow({
                     components: [
@@ -222,7 +248,7 @@ export class MusicPlayer {
             try {
                 await (this as any)[interaction.customId.replace("music", "button")](interaction);
             } catch (error) {
-                this.reject(error);
+                this.reject(error as string);
             }
         });
     }
@@ -367,16 +393,17 @@ namespace Utils {
         return json;
     }
 
-    async function parsePlaylistResult(json: any): Promise<Music[]> {
-        const musics: Music[] = [];
+    function parsePlaylistResult(json: any): Promise<Music[]> {
+        return new Promise(resolve => {
+            const musics: Music[] = [];
 
-        for (const item of json.items) {
-            const url = `https://youtube.com/watch?v=${item.snippet.resourceId.videoId}`;
-            try {
-                musics.push(await Music.create(url));
-            } catch (e) {}
-        }
-
-        return musics;
+            for (const item of json.items) {
+                const url = `https://youtube.com/watch?v=${item.snippet.resourceId.videoId}`;
+                Music.create(url).then(music => {
+                    musics.push(music);
+                    if (musics.length === json.items.length) resolve(musics);
+                });
+            }
+        });
     }
 }
