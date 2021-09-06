@@ -36,6 +36,17 @@ export default class Bot {
 
             console.log("Bot ready");
             onReady();
+
+            const setActivity = () => {
+                let version = process.env.npm_package_version ?? "2";
+                this.client.user.setActivity(`CostaBot V${version} (DM si bug)`);
+            };
+
+            setActivity();
+
+            setInterval(() => {
+                setActivity();
+            }, 1000 * 60 * 10); // 10 min
         });
     }
 
