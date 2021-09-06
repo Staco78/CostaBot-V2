@@ -1,6 +1,6 @@
 import Bot from "../bot";
 import Server from "../server/server";
-import Discord, { ButtonInteraction, GuildMember, MessageActionRow, Util } from "discord.js";
+import Discord from "discord.js";
 import {
     AudioPlayerStatus,
     createAudioPlayer,
@@ -15,11 +15,13 @@ import config from "../../config";
 export async function exec(bot: Bot, server: Server, interaction: Discord.CommandInteraction) {
     await interaction.deferReply();
 
-    let voiceChannel = (interaction.member as GuildMember).voice.channel ?? undefined;
+    let voiceChannel = (interaction.member as Discord.GuildMember).voice.channel ?? undefined;
     if (voiceChannel instanceof Discord.StageChannel) {
         voiceChannel = undefined;
         interaction.channel?.send("Impossible de se connecter au salon vocal: type de channel non supporté");
     }
+
+    if (server.radioPlayer) throw new Error("Impossible de lancer la musique car la radio est déjà lancée");
 
     if (server.musicPlayer) {
         if (interaction.options.data[0].value && typeof interaction.options.data[0].value === "string") {
@@ -181,7 +183,7 @@ export class MusicPlayer {
 
     private async play_pause(interaction?: Discord.ButtonInteraction) {
         if (!this.connection && interaction) {
-            const channel = (interaction.member as GuildMember).voice.channel;
+            const channel = (interaction.member as Discord.GuildMember).voice.channel;
 
             if (channel instanceof Discord.VoiceChannel) {
                 this.connect(channel);
@@ -230,7 +232,7 @@ export class MusicPlayer {
     private async sendButtons() {
         await this.message.edit({
             components: [
-                new MessageActionRow({
+                new Discord.MessageActionRow({
                     components: [
                         new Discord.MessageButton({ customId: "music_previous", style: "SECONDARY", label: "⏮️" }),
                         new Discord.MessageButton({ customId: "music_play_pause", style: "SECONDARY", label: "⏯️" }),
@@ -265,7 +267,7 @@ export class MusicPlayer {
         } else this.player.stop();
     }
 
-    private button_connect(interaction: ButtonInteraction) {
+    private button_connect(interaction: Discord.ButtonInteraction) {
         const voiceChannel = (interaction.member as Discord.GuildMember).voice.channel;
 
         if (!voiceChannel) {
@@ -288,7 +290,7 @@ export class MusicPlayer {
         await this.destroy();
     }
 
-    private async button_play_pause(interaction: ButtonInteraction) {
+    private async button_play_pause(interaction: Discord.ButtonInteraction) {
         await this.play_pause(interaction);
     }
 }

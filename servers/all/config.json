@@ -10,5 +10,8 @@
             "max": 25,
             "timer": 60000
         }
+    },
+    "radio": {
+        "defaultLink": "http://enzomtp.dragonia-pvp.fr:8000/"
     }
 }

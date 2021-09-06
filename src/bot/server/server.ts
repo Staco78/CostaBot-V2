@@ -7,6 +7,7 @@ import MembersManager from "../members/membersManager";
 import XpManager from "../xp/xpManager";
 import Utils from "../../utils";
 import { MusicPlayer } from "../personalized_commands/music";
+import { RadioPlayer } from "../personalized_commands/radio";
 
 const serversPath = pathJoin(process.cwd(), "servers");
 
@@ -17,6 +18,7 @@ export default class Server {
     private commands: ServerCommand[] = [];
     readonly members: MembersManager;
     musicPlayer: MusicPlayer | null = null;
+    radioPlayer: RadioPlayer | null = null;
     private xpManager!: XpManager;
     config!: ServerConfig;
     name: string;
@@ -45,7 +47,8 @@ export default class Server {
                     let command = this.commands.find(c => c.command?.id === interaction.commandId);
                     if (command)
                         command.onUsed(this, interaction).catch((reason: Error) => {
-                            if (interaction.replied) interaction.editReply({ content: reason.toString() });
+                            if (interaction.deferred || interaction.replied)
+                                interaction.editReply({ content: reason.toString() });
                             else interaction.reply({ content: reason.toString() });
                         });
                 } else if (interaction.isButton()) {

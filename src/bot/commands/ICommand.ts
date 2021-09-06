@@ -43,6 +43,10 @@ export default abstract class ICommand {
     private async interpretInteractionReply(interaction: Discord.CommandInteraction) {
         if (!this.replyData.content) throw new Error("Content to reply not found");
 
-        interaction.reply(await new Interpreter(this.replyData.content, interaction).exec());
+        const server = this.bot.servers.find(server => server.id.toString() === interaction.guildId);
+
+        if (!server) throw new Error("Server not found");
+
+        interaction.reply(await new Interpreter(this.replyData.content, server, interaction).exec());
     }
 }

@@ -42,11 +42,12 @@ export default class XpManager {
 
     private xpVoc() {
         this.server.members.array.forEach(member => {
-            if (this.canGetVocXp(member.guildMember)) member.addXp(Utils.random(this.server.config.xp.voc.min, this.server.config.xp.voc.max));
+            if (XpManager.canGetVocXp(member.guildMember))
+                member.addXp(Utils.random(this.server.config.xp.voc.min, this.server.config.xp.voc.max));
         });
     }
 
-    private canGetVocXp(member: GuildMember): boolean {
+    private static canGetVocXp(member: GuildMember): boolean {
         if (!member.voice.channel) return false;
         if (member.voice.channel.members.size < 2) return false;
 

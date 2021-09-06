@@ -32,7 +32,7 @@ export class TokenParser {
     makeTokens(): Token[] {
         while (this.current_char) {
             if (this.current_char === " ") this.advance();
-            else if (this.current_char.match(/[a-z]/i)) this.tokens.push(this.detectWord());
+            else if (this.current_char.match(/[a-z_]/i)) this.tokens.push(this.detectWord());
             else if (this.current_char === "(") {
                 this.tokens.push(new Token(Tokens.LEFT_PARENT));
                 this.advance();
@@ -63,7 +63,7 @@ export class TokenParser {
 
     private detectWord(): Token {
         let word = "";
-        while (this.current_char && this.current_char.match(/[a-z]/i)) {
+        while (this.current_char && this.current_char.match(/[a-z_]/i)) {
             word += this.current_char;
             this.advance();
         }

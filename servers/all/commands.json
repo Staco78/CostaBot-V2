@@ -72,5 +72,42 @@
             "type": 2,
             "name": "music"
         }
+    },
+    {
+        "command": {
+            "name": "radio",
+            "description": "Met de la radio",
+            "options": [
+                {
+                    "type": 3,
+                    "name": "link",
+                    "description": "Le lien de la radio"
+                }
+            ]
+        },
+        "reply": {
+            "type": 2,
+            "name": "radio"
+        }
+    },
+    {
+        "command": {
+            "name": "radio_stop",
+            "description": "Arrète la radio"
+        },
+        "reply": {
+            "type": 2,
+            "name": "radio_stop"
+        }
+    },
+    {
+        "command": {
+            "name": "classement",
+            "description": "Le classement du serveur /!\\ BETA /!\\"
+        },
+        "reply": {
+            "type": 1,
+            "content": "${website_url}/servers/${server.id}"
+        }
     }
 ]
