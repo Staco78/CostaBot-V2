@@ -41,7 +41,7 @@ interface CommandConfig {
 interface DatabaseMember {
     id: string;
     xp: number;
-    name: string;
+    server: string;
     lastMessageTimestamp: number;
 }
 

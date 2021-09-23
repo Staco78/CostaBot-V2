@@ -1,7 +1,8 @@
 import { Collection, Db, MongoClient } from "mongodb";
 import Member from "../bot/members/member";
-import Server from "../bot/server/server";
 import config from "../config";
+import DefaultObjects from "../defaultObjects";
+import Utils from "../utils";
 
 export namespace Database {
     let client: MongoClient;
@@ -82,6 +83,12 @@ export namespace Database {
     }
 
     export async function getServerMembers(serverId: bigint): Promise<DatabaseMember[]> {
-        return await memberCollection.find({ server: serverId.toString() }, { sort: { xp: -1 } }).toArray();
+        const members = await memberCollection.find({ server: serverId.toString() }, { sort: { xp: -1 } }).toArray();
+
+        for (const member of members) {
+            if (!Utils.checkObject(member, DefaultObjects.databaseMember)) throw new Error("Database member not valid");
+        }
+
+        return members as any;
     }
 }

@@ -1,6 +1,4 @@
 namespace Utils {
-
-
     // Merge objects from https://stackoverflow.com/a/46973278/16002616
     export function mergeObjects(target: any, ...sources: any[]): any {
         if (!sources.length) {
@@ -38,7 +36,17 @@ namespace Utils {
     export function random(min: number, max: number): number {
         return Math.round(Math.random() * (max - min) + min);
     }
-}
 
+    export function checkObject(checked: object, model: object): boolean {
+        if (typeof checked !== "object") return false;
+        if (typeof model !== "object") return false;
+
+        for (const value in model) {
+            if (!(value in checked)) return false;
+        }
+
+        return true;
+    }
+}
 
 export default Utils;
