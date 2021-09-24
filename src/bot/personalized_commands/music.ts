@@ -91,12 +91,13 @@ export class MusicPlayer {
                     await this._addMusic(link);
                     this.next();
                     await this.play();
-                } else this.sendEmbed();
+                }
             } else {
                 if (link) {
                     await this._addMusic(link);
-                } else this.sendEmbed();
+                }
             }
+            await this.sendEmbed();
             await this.sendButtons();
         })().catch(reject);
     }
@@ -107,7 +108,7 @@ export class MusicPlayer {
             let resolved = false;
             const listener = (music: Music) => {
                 this.playlist.push(music);
-                this.sendEmbed();
+                // console.log("music added");
 
                 if (!resolved) {
                     resolved = true;
@@ -117,7 +118,12 @@ export class MusicPlayer {
             musicLoader.on("music_added", listener);
 
             musicLoader.once("end", () => {
+                this.sendEmbed();
                 musicLoader.off("music_added", listener);
+            });
+
+            musicLoader.on("loading_error", () => {
+                this.interaction.channel?.send("Une musique undisponible a été ignorée");
             });
         });
     }
@@ -182,14 +188,19 @@ export class MusicPlayer {
                     if (!this.actualMusic) {
                         this.next();
                         this.play();
-                    } else this.sendEmbed();
-                } else this.sendEmbed();
+                    }
+                }
             });
 
             musicLoader.on("end", () => {
+                this.sendEmbed();
                 if (musicsAddedCount === 0) resolve(`Aucune musique n'a été ajouté`);
                 if (musicsAddedCount === 1) resolve(`Une musique a été ajouté`);
                 resolve(`${musicsAddedCount} musiques ont été ajoutés`);
+            });
+
+            musicLoader.on("loading_error", () => {
+                this.interaction.channel?.send("Une musique undisponible a été ignorée");
             });
         });
     }
