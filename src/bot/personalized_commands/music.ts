@@ -123,7 +123,7 @@ export class MusicPlayer {
             });
 
             musicLoader.on("loading_error", () => {
-                this.interaction.channel?.send("Une musique undisponible a été ignorée");
+                this.interaction.channel?.send("Une musique indisponible a été ignorée");
             });
         });
     }

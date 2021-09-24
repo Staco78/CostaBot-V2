@@ -91,4 +91,8 @@ export namespace Database {
 
         return members as any;
     }
+
+    export async function deleteMember(serverId: string, memberId: string): Promise<void> {
+        await memberCollection.deleteOne({ server: serverId, id: memberId });
+    }
 }

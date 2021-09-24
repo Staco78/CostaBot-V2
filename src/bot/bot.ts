@@ -1,8 +1,8 @@
 import Discord from "discord.js";
 import Server from "./server/server";
-import GlobalCommand from "./commands/globalCommand";
 import fs from "fs";
 import { join as pathJoin } from "path";
+import { Database } from "../data/database";
 
 export default class Bot {
     readonly servers: Server[] = [];
@@ -47,6 +47,10 @@ export default class Bot {
             setInterval(() => {
                 setActivity();
             }, 1000 * 60 * 10); // 10 min
+
+            client.on("guildMemberRemove", member => {
+                Database.deleteMember(member.guild.id, member.id);
+            });
         });
     }
 
