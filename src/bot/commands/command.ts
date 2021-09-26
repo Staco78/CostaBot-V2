@@ -4,14 +4,18 @@ import Bot from "../bot";
 import Server from "../server/server";
 import Interpreter from "./interpreter/interpreter";
 
-export default abstract class ICommand {
+export default class Command {
     command?: Discord.ApplicationCommand;
     protected bot: Bot;
     private replyData: InteractionReplyOptions;
 
-    constructor(bot: Bot, data: CommandConfig) {
-        this.bot = bot;
+    constructor(server: Server, data: CommandConfig) {
+        this.bot = server.bot;
         this.replyData = data.reply;
+
+        server.guild.commands.create(data.command).then(command => {
+            this.command = command;
+        });
     }
 
     onUsed(server: Server, interaction: Discord.CommandInteraction) {

@@ -1,7 +1,7 @@
 import Discord from "discord.js";
 import fs from "fs";
 import Bot from "../bot";
-import ServerCommand from "../commands/serverCommand";
+import Command from "../commands/command";
 import { join as pathJoin } from "path";
 import MembersManager from "../members/membersManager";
 import XpManager from "../xp/xpManager";
@@ -15,7 +15,7 @@ export default class Server {
     private _id: bigint;
     readonly bot: Bot;
     readonly guild: Discord.Guild;
-    private commands: ServerCommand[] = [];
+    private commands: Command[] = [];
     readonly members: MembersManager;
     musicPlayer: MusicPlayer | null = null;
     radioPlayer: RadioPlayer | null = null;
@@ -83,7 +83,7 @@ export default class Server {
         );
 
         commands.forEach(command => {
-            this.commands.push(new ServerCommand(this, command));
+            this.commands.push(new Command(this, command));
         });
 
         let globalCommands: ServerCommandsConfig = JSON.parse(
@@ -91,7 +91,7 @@ export default class Server {
         );
 
         globalCommands.forEach(command => {
-            this.commands.push(new ServerCommand(this, command));
+            this.commands.push(new Command(this, command));
         });
     }
 
