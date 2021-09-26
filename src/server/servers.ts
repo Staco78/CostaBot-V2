@@ -38,16 +38,20 @@ async function getRanking(guild: APIPartialGuild): Promise<ServerRanking> {
     const returnUsers: ServerRankingUser[] = [];
 
     for (const user of users) {
-        const member = await server.members.get(user.id);
+        try {
+            const member = await server.members.get(user.id);
 
-        returnUsers.push({
-            id: user.id,
-            avatarURL: member.guildMember.user.displayAvatarURL(),
-            discriminator: member.guildMember.user.discriminator,
-            lvl: calcLvl(user.xp),
-            username: member.guildMember.displayName,
-            xp: user.xp,
-        });
+            returnUsers.push({
+                id: user.id,
+                avatarURL: member.guildMember.user.displayAvatarURL(),
+                discriminator: member.guildMember.user.discriminator,
+                lvl: calcLvl(user.xp),
+                username: member.guildMember.displayName,
+                xp: user.xp,
+            });
+        } catch (e) {
+            await Database.deleteMember(server.id.toString(), user.id);
+        }
     }
 
     return { users: returnUsers };

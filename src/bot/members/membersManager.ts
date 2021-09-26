@@ -16,7 +16,12 @@ export default class MembersManager {
         let member = this.members.find(m => m.id === id);
         if (member) return member;
 
-        member = new Member(await this.server.guild.members.fetch(id), this.server);
+        try {
+            var m = await this.server.guild.members.fetch(id);
+        } catch (e) {
+            throw new Error("Member not found");
+        }
+        member = new Member(m, this.server);
 
         this.members.push(member);
         return member;

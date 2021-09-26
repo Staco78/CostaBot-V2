@@ -1,6 +1,6 @@
 import express from "express";
 import config from "../config";
-import { authorizationMiddleware } from "./authorizationManager";
+import { authorizationMiddleware, errorWrapperMiddleware } from "./middlewares";
 import login from "./login";
 import { getServers, getServer } from "./servers";
 
@@ -17,11 +17,11 @@ namespace Server {
         next();
     });
 
-    app.get("/redirect_auth", login);
+    app.get("/redirect_auth", errorWrapperMiddleware(login));
 
-    app.get("/api/servers/:id", (req, res, next) => authorizationMiddleware("/users/@me/guilds")(req, res, next), getServer);
+    app.get("/api/servers/:id", authorizationMiddleware("/users/@me/guilds"), errorWrapperMiddleware(getServer));
 
-    app.get("/api/servers", authorizationMiddleware("/users/@me/guilds"), getServers);
+    app.get("/api/servers", authorizationMiddleware("/users/@me/guilds"), errorWrapperMiddleware(getServers));
 
     app.use(express.static(config.server.publicFiles, { extensions: ["html"], index: "index.html" }));
 

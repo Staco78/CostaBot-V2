@@ -12,6 +12,8 @@ export namespace Database {
     export async function connect() {
         client = await new MongoClient(config.database.url).connect();
 
+        console.log("Database: connected");
+
         db = client.db("CostaBot");
         memberCollection = db.collection("members");
     }
@@ -25,6 +27,9 @@ export namespace Database {
         if (response) return response as DatabaseMember;
 
         await createMember(member);
+
+        console.log("Database: member getted");
+
         return await getMember(member);
     }
 
@@ -38,6 +43,9 @@ export namespace Database {
         if (response.value) return response as DatabaseMember;
 
         await createMember(member);
+
+        console.log("Database: member edited");
+
         return editMember(member, dataToSet);
     }
 
@@ -54,6 +62,9 @@ export namespace Database {
         if (response.value) return response.value;
 
         await createMember(member);
+
+        console.log("Database: member edited");
+
         return addValueToMember(member, dataToAdd);
     }
 
@@ -70,6 +81,9 @@ export namespace Database {
         if (response.value) return response.value;
 
         await createMember(member);
+
+        console.log("Database: member edited");
+
         return addValueToMember(member, dataToSet);
     }
 
@@ -80,6 +94,8 @@ export namespace Database {
             xp: 0,
             lastMessageTimestamp: 0,
         });
+
+        console.log("Database: member created");
     }
 
     export async function getServerMembers(serverId: bigint): Promise<DatabaseMember[]> {
@@ -94,5 +110,7 @@ export namespace Database {
 
     export async function deleteMember(serverId: string, memberId: string): Promise<void> {
         await memberCollection.deleteOne({ server: serverId, id: memberId });
+
+        console.log("Database: member deleted");
     }
 }

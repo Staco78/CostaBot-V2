@@ -2,13 +2,15 @@ import { Request, Response, NextFunction } from "express";
 import fetch from "node-fetch";
 
 export function authorizationMiddleware(link?: string) {
-    return async (req: Request, res: Response, next: NextFunction) => {
+    return errorWrapperMiddleware(async (req: Request, res: Response, next: NextFunction) => {
         if (typeof req.headers.authorization !== "string") {
             res.status(401).end("Not authorized");
             return;
         }
 
-        const response = await fetch(`https://discord.com/api/v9${link ?? "/users/@me"}`, { headers: { Authorization: req.headers.authorization } });
+        const response = await fetch(`https://discord.com/api/v9${link ?? "/users/@me"}`, {
+            headers: { Authorization: req.headers.authorization },
+        });
 
         if (response.status !== 200) {
             if (response.status === 401) {
@@ -26,5 +28,15 @@ export function authorizationMiddleware(link?: string) {
         (req as any).data = json;
 
         next();
+    });
+}
+
+export function errorWrapperMiddleware(func: (req: Request, res: Response, next: NextFunction) => void) {
+    return async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await func(req, res, next);
+        } catch (error: any) {
+            res.status(500).end(error.toString());
+        }
     };
 }
