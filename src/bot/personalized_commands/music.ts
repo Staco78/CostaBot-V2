@@ -14,8 +14,6 @@ import config from "../../config";
 import { EventEmitter } from "events";
 
 export async function exec(bot: Bot, server: Server, interaction: Discord.CommandInteraction) {
-    await interaction.deferReply();
-
     let voiceChannel = (interaction.member as Discord.GuildMember).voice.channel ?? undefined;
     if (voiceChannel instanceof Discord.StageChannel) {
         voiceChannel = undefined;

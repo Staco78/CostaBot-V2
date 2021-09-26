@@ -20,7 +20,7 @@ export function exec(bot: Bot, server: Server, interaction: Discord.CommandInter
         interaction.options.data[0]?.value?.toString() ?? server.config.radio.defaultLink
     );
 
-    interaction.reply("Radio lancée");
+    interaction.editReply("Radio lancée");
 }
 
 export class RadioPlayer {

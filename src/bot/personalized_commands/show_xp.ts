@@ -6,8 +6,9 @@ import Server from "../server/server";
 import calcLvl, { calcNextLvl, calcXpForLvl } from "../../common/maths/lvlCalc";
 
 export function exec(bot: Bot, server: Server, interaction: Discord.CommandInteraction) {
-    interaction.deferReply().then(async () => {
-        if (interaction.options.data[0] && interaction.options.data[0].user) var member = await server.members.get(interaction.options.data[0].user.id);
+    (async () => {
+        if (interaction.options.data[0] && interaction.options.data[0].user)
+            var member = await server.members.get(interaction.options.data[0].user.id);
         else var member = await server.members.get(interaction.user.id);
         const databaseMember = await Database.getMember(member);
 
@@ -29,5 +30,5 @@ export function exec(bot: Bot, server: Server, interaction: Discord.CommandInter
             let attachement = new Discord.MessageAttachment(image);
             interaction.editReply({ files: [attachement] });
         });
-    });
+    })();
 }

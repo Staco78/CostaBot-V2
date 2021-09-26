@@ -7,6 +7,6 @@ export function exec(bot: Bot, server: Server, interaction: Discord.CommandInter
     if (server.radioPlayer) {
         server.radioPlayer.stop();
         server.radioPlayer = null;
-        interaction.reply("La radio s'est arrétée");
+        interaction.editReply("La radio s'est arrétée");
     } else throw new Error("La radio n'est pas allumée");
 }

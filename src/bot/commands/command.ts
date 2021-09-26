@@ -19,10 +19,11 @@ export default class Command {
     }
 
     onUsed(server: Server, interaction: Discord.CommandInteraction) {
-        return new Promise<void>((resolve, reject) => {
+        return new Promise<void>(async (resolve, reject) => {
+            await interaction.deferReply();
             switch (this.replyData.type) {
                 case InteractionReplyType.static:
-                    interaction.reply(this.replyData).catch(reject);
+                    interaction.editReply(this.replyData).catch(reject);
                     break;
 
                 case InteractionReplyType.interpreted:
@@ -51,6 +52,6 @@ export default class Command {
 
         if (!server) throw new Error("Server not found");
 
-        interaction.reply(await new Interpreter(this.replyData.content, server, interaction).exec());
+        interaction.editReply(await new Interpreter(this.replyData.content, server, interaction).exec());
     }
 }
