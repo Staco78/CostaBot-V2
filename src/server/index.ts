@@ -3,6 +3,7 @@ import config from "../config";
 import { authorizationMiddleware, errorWrapperMiddleware } from "./middlewares";
 import login from "./login";
 import { getServers, getServer } from "./servers";
+import path from "path";
 
 namespace Server {
     const app = express();
@@ -23,10 +24,10 @@ namespace Server {
 
     app.get("/api/servers", authorizationMiddleware("/users/@me/guilds"), errorWrapperMiddleware(getServers));
 
-    app.use(express.static(config.server.publicFiles, { extensions: ["html"], index: "index.html" }));
+    app.use(express.static(path.join(process.cwd(), "public"), { extensions: ["html"], index: "index.html" }));
 
     app.use((req, res) => {
-        res.sendFile(`${config.server.publicFiles}/index.html`);
+        res.sendFile(`${path.join(process.cwd(), "public")}/index.html`);
     });
 }
 

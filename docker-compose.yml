@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+    app:
+        image: bot
+        env_file: .env
+        ports:
+            - ${server_port}:${server_port}
+        restart: always
+    mongo:
+        image: mongo:4.4
+        volumes:
+            - mongo-data:/data
+
+volumes:
+    mongo-data:

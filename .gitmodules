@@ -1,0 +1,3 @@
+[submodule "website"]
+	path = website
+	url = https://github.com/Staco78/costabot-v2-website.git

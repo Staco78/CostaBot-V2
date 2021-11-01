@@ -28,7 +28,7 @@ export namespace Database {
 
         await createMember(member);
 
-        console.log("Database: member getted");
+        console.log("Database: member got");
 
         return await getMember(member);
     }

@@ -39,7 +39,7 @@ export class RadioPlayer {
         this.connection = joinVoiceChannel({
             channelId: voiceChannel.id,
             guildId: this.server.guild.id,
-            adapterCreator: this.server.guild.voiceAdapterCreator,
+            adapterCreator: this.server.guild.voiceAdapterCreator as any,
         });
 
         this.connection.on("stateChange", (oldState, newState) => {
