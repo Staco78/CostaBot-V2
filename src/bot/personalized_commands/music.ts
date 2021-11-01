@@ -88,6 +88,7 @@ export class MusicPlayer {
                 if (link) {
                     await this._addMusic(link);
                     this.next();
+
                     await this.play();
                 }
             } else {
@@ -97,7 +98,13 @@ export class MusicPlayer {
             }
             await this.sendEmbed();
             await this.sendButtons();
-        })().catch(reject);
+        })().catch(this.reject);
+    }
+
+    private errorLoadingMusic(details: string) {
+        const str = `Une musique indisponible a été ignorée (${details})`;
+
+        this.interaction.channel?.send(str);
     }
 
     private _addMusic(url: string) {
@@ -106,7 +113,6 @@ export class MusicPlayer {
             let resolved = false;
             const listener = (music: Music) => {
                 this.playlist.push(music);
-                // console.log("music added");
 
                 if (!resolved) {
                     resolved = true;
@@ -120,8 +126,8 @@ export class MusicPlayer {
                 musicLoader.off("music_added", listener);
             });
 
-            musicLoader.on("loading_error", () => {
-                this.interaction.channel?.send("Une musique indisponible a été ignorée");
+            musicLoader.on("loading_error", (url: string, error: Error) => {
+                this.errorLoadingMusic(error.toString());
             });
         });
     }
@@ -140,10 +146,6 @@ export class MusicPlayer {
                 }, 1000);
             }
         });
-
-        // this.player.on("error", console.log);
-        // this.player.on("debug", console.log);
-        // this.player.on("stateChange", console.log);
 
         this.connection.subscribe(this.player);
     }
@@ -182,10 +184,12 @@ export class MusicPlayer {
             musicLoader.on("music_added", (music: Music) => {
                 musicsAddedCount++;
                 this.playlist.push(music);
-                if (!played) {
-                    if (!this.actualMusic) {
-                        this.next();
-                        this.play();
+                if (this.connection) {
+                    if (!played) {
+                        if (!this.actualMusic) {
+                            this.next();
+                            this.play();
+                        }
                     }
                 }
             });
@@ -197,8 +201,8 @@ export class MusicPlayer {
                 resolve(`${musicsAddedCount} musiques ont été ajoutés`);
             });
 
-            musicLoader.on("loading_error", () => {
-                this.interaction.channel?.send("Une musique undisponible a été ignorée");
+            musicLoader.on("loading_error", (url: string, error: Error) => {
+                this.errorLoadingMusic(error.toString());
             });
         });
     }
@@ -286,7 +290,7 @@ export class MusicPlayer {
         });
 
         this.server.onButtonInteraction("music", async interaction => {
-            interaction.deferUpdate().catch(console.log);
+            interaction.deferUpdate().catch(this.reject);
 
             try {
                 await (this as any)[interaction.customId.replace("music", "button")](interaction);
@@ -298,7 +302,7 @@ export class MusicPlayer {
 
     private async button_previous() {
         await this.previous();
-        await this.play();
+        if (this.connection) await this.play();
     }
 
     private async button_next() {

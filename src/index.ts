@@ -4,8 +4,29 @@ import { Database } from "./data/database";
 import { execSync } from "child_process";
 import Server from "./server";
 import Constants from "./common/constants";
+import { writeFile } from "fs/promises";
 
 process.title = "CostaBot";
+
+process.on("uncaughtException", async e => {
+    await reportE(e);
+});
+
+process.on("exit", async () => {
+    await reportE(null);
+});
+
+process.on("unhandledRejection", async e => {
+    await reportE(e as any);
+});
+
+async function reportE(e: Error | null) {
+    const date = new Date();
+    await writeFile(
+        `crash report ${date.toDateString()} ${date.getHours()}h${date.getMinutes()} ${date.getSeconds()}s`,
+        e?.name + "\n" + e?.message + "\n\n\n" + e?.stack
+    );
+}
 
 try {
     execSync("ffmpeg -version");
