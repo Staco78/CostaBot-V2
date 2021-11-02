@@ -30,7 +30,7 @@ export default class Server {
         this.bot = bot;
 
         const guild = this.bot.client.guilds.cache.get(`${id}`);
-        if (!guild) throw new Error("Guild not found");
+        if (!guild) throw new Error("Guild not found " + id);
         this.guild = guild;
         this.name = guild.name;
 
