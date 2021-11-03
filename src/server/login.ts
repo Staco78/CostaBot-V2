@@ -11,7 +11,7 @@ export default async function login(req: Request, res: Response) {
     body.append("client_secret", config.discord.client_secret);
     body.append("grant_type", "authorization_code");
     body.append("code", code as string);
-    body.append("redirect_uri", "http://localhost/redirect_auth");
+    body.append("redirect_uri", config.discord.redirect_uri);
 
     const response = await fetch("https://discord.com/api/oauth2/token", {
         method: "POST",
@@ -22,6 +22,12 @@ export default async function login(req: Request, res: Response) {
     });
 
     const json = await response.json();
+
+    if (!json.access_token) {
+        console.log("Website login invalid token", json);
+        
+        throw new Error("Invalid token");
+    }
 
     res.cookie("token", json.access_token, { expires: new Date(new Date().getFullYear() * 2, 1) });
 

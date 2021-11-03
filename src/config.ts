@@ -19,6 +19,7 @@ const config: config = {
     discord: {
         client_id: checkEnv("discord_client_id"),
         client_secret: checkEnv("discord_client_secret"),
+        redirect_uri: checkEnv("discord_redirect_uri"),
     },
     server: {
         active: Boolean(parseInt(checkEnv("server_active"))),
@@ -38,6 +39,7 @@ declare interface config {
     discord: {
         client_id: string;
         client_secret: string;
+        redirect_uri: string;
     };
     server: {
         active: boolean;

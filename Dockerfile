@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 FROM node:16-alpine AS build
+WORKDIR /bot
 RUN apk add --no-cache build-base g++ cairo-dev jpeg-dev \
     pango-dev giflib-dev libtool autoconf libsodium automake 
-WORKDIR /bot
 COPY package* ./
 RUN npm ci
 COPY src ./src
@@ -29,5 +29,5 @@ COPY --from=build /bot/node_modules /bot/node_modules
 COPY --from=website-build /website/dist ./public
 COPY package.json ./package.json
 COPY assets ./assets
-COPY start.sh ./start.sh
-CMD ./start.sh
+COPY start.js ./start.js
+CMD ["node", "start.js"]
