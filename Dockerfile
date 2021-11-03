@@ -28,6 +28,6 @@ COPY --from=build /bot/dist /bot/dist
 COPY --from=build /bot/node_modules /bot/node_modules
 COPY --from=website-build /website/dist ./public
 COPY package.json ./package.json
-COPY servers ./servers
 COPY assets ./assets
-CMD npm start
+COPY start.sh ./start.sh
+CMD ./start.sh

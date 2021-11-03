@@ -2,11 +2,13 @@ version: "3.8"
 
 services:
     app:
-        image: staco/bot
+        image: bot
         env_file: .env
         ports:
             - ${server_port}:${server_port}
         restart: always
+        volumes:
+            - ./servers:/dev/servers
     mongo:
         image: mongo:4.4
         volumes:
