@@ -31,10 +31,10 @@ function replaceAll() {
     function replace(key, value) {
         data = data.replace(key, value);
         console.log(`${key} replaced by ${value}`);
-        console.log(data.includes(key));
     }
 
     replace("REPLACE_REDIRECT_URL", process.env.discord_redirect_uri);
+    replace("REPLACE_CLIENT_ID", process.env.discord_client_id);
 
     fs.writeFileSync("public/renderer.js", data);
 }
