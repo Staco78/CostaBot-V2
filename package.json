@@ -25,6 +25,7 @@
     "scripts": {
         "start": "node .",
         "build": "tsc",
-        "watch": "tsc --watch"
+        "watch": "tsc --watch",
+        "dev": "nodemon -L"
     }
 }

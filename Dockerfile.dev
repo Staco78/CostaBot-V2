@@ -1,0 +1,11 @@
+# syntax=docker/dockerfile:1
+FROM node:16-alpine
+RUN apk add --no-cache build-base g++ cairo-dev jpeg-dev \
+    pango-dev giflib-dev libtool autoconf libsodium automake ffmpeg
+WORKDIR /bot
+COPY package* ./
+RUN npm ci
+COPY assets ./assets
+COPY start.js ./start.js
+RUN npm i -g nodemon
+CMD ["node", "start.js", "--dev"]
