@@ -132,7 +132,9 @@ export class MusicPlayer {
 
         const stream = ytdl.downloadFromInfo(this.actualMusic.infos, {
             filter: "audioonly",
-            quality: "highestaudio",
+            quality: this.actualMusic.infos.videoDetails.isLiveContent
+                ? [128, 127, 120, 96, 95, 94, 93]
+                : "highestaudio",
             dlChunkSize: 0,
             highWaterMark: 1 << 25,
         });
@@ -146,8 +148,8 @@ export class MusicPlayer {
 
         if (this.connection) {
             if (!this.actualMusic) {
-                this.next().then(() => {
-                    this.play();
+                this.next().then(async () => {
+                    await this.play();
                 });
             }
         }
@@ -189,7 +191,7 @@ export class MusicPlayer {
             this.player.unpause();
         } else {
             if (!this.actualMusic) await this.next();
-            this.play();
+            await this.play();
         }
     }
 
@@ -254,7 +256,7 @@ export class MusicPlayer {
     private async button_next() {
         await this.next();
         if (this.actualMusic) {
-            if (this.connection) this.play();
+            if (this.connection) await this.play();
         } else this.player.stop();
     }
 
@@ -273,7 +275,7 @@ export class MusicPlayer {
 
         if (!this.actualMusic) {
             await this.next();
-            this.play();
+            await this.play();
         }
     }
 
