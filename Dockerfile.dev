@@ -5,7 +5,7 @@ RUN apk add --no-cache build-base g++ cairo-dev jpeg-dev \
 WORKDIR /bot
 COPY package* ./
 RUN npm ci
+RUN npm i -g nodemon
 COPY assets ./assets
 COPY start.js ./start.js
-RUN npm i -g nodemon
 CMD ["node", "start.js", "--dev"]

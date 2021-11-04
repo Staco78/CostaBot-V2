@@ -40,7 +40,7 @@ function replaceAll() {
 
     function replace(key, value) {
         const index = buff.indexOf(key);
-        if (index === -1) throw new Error(`${key} not found`);
+        if (index === -1) return;
 
         const before = buff.slice(0, index);
         const after = buff.slice(index + key.length);

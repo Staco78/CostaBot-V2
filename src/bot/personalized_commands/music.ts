@@ -11,7 +11,6 @@ import {
 import ytdl from "ytdl-core";
 import fetch from "node-fetch";
 import config from "../../config";
-import { EventEmitter } from "events";
 
 export async function exec(bot: Bot, server: Server, interaction: Discord.CommandInteraction) {
     let voiceChannel = (interaction.member as Discord.GuildMember).voice.channel ?? undefined;
@@ -24,8 +23,8 @@ export async function exec(bot: Bot, server: Server, interaction: Discord.Comman
 
     if (server.musicPlayer) {
         if (interaction.options.data[0].value && typeof interaction.options.data[0].value === "string") {
-            const msg = await server.musicPlayer.addMusic(interaction.options.data[0].value);
-            interaction.editReply(msg);
+            server.musicPlayer.addMusic(interaction.options.data[0].value);
+            interaction.editReply("Ajouté avec succès");
         }
     } else {
         await interaction.editReply("Je lance la musique");
@@ -50,7 +49,7 @@ export class MusicPlayer {
     private player = createAudioPlayer();
 
     private history: Music[] = [];
-    private playlist: Music[] = [];
+    private playlist: Playlist = new EmptyPlaylist();
     private actualMusic: Music | null = null;
 
     private reject: (reason: string) => void;
@@ -66,18 +65,17 @@ export class MusicPlayer {
         this.server = server;
         this.reject = reject;
 
-        this.player.on("stateChange", (oldState, newState) => {
+        this.player.on("stateChange", async (oldState, newState) => {
             if (newState.status === AudioPlayerStatus.Idle && oldState.status !== AudioPlayerStatus.Idle) {
-                this.next();
+                await this.next();
                 this.play();
             }
         });
 
         this.player.on("error", error => {
-            this.reject("Une erreur inattendue s'est produite\nLa musique se relance");
-            console.log(`${error}\nUnexpected error restart music`);
-
-            this.play();
+            this.reject("Une erreur inattendue s'est produite");
+            console.log(`${error}\nUnexpected music error`);
+            this.next();
         });
 
         (async () => {
@@ -86,50 +84,18 @@ export class MusicPlayer {
             if (voiceChannel) {
                 this.connect(voiceChannel);
                 if (link) {
-                    await this._addMusic(link);
-                    this.next();
-
+                    this.playlist = loadPlaylistFromLink(link);
+                    await this.next();
                     await this.play();
                 }
             } else {
                 if (link) {
-                    await this._addMusic(link);
+                    this.playlist = loadPlaylistFromLink(link);
                 }
             }
             await this.sendEmbed();
             await this.sendButtons();
         })().catch(this.reject);
-    }
-
-    private errorLoadingMusic(details: string) {
-        const str = `Une musique indisponible a été ignorée (${details})`;
-
-        this.interaction.channel?.send(str);
-    }
-
-    private _addMusic(url: string) {
-        return new Promise<void>(resolve => {
-            const musicLoader = new MusicLoader(url);
-            let resolved = false;
-            const listener = (music: Music) => {
-                this.playlist.push(music);
-
-                if (!resolved) {
-                    resolved = true;
-                    resolve();
-                }
-            };
-            musicLoader.on("music_added", listener);
-
-            musicLoader.once("end", () => {
-                this.sendEmbed();
-                musicLoader.off("music_added", listener);
-            });
-
-            musicLoader.on("loading_error", (url: string, error: Error) => {
-                this.errorLoadingMusic(error.toString());
-            });
-        });
     }
 
     private connect(voiceChannel: Discord.VoiceChannel): void {
@@ -155,7 +121,6 @@ export class MusicPlayer {
         this.player.removeAllListeners();
         if (this.connection?.state.status !== "destroyed") this.connection?.destroy(true);
         this.connection?.removeAllListeners();
-        this.playlist = [];
         await this.message.edit({ content: "Musique terminée", embeds: [], components: [] });
         this.server.musicPlayer = null;
     }
@@ -175,42 +140,23 @@ export class MusicPlayer {
         this.player.play(createAudioResource(stream));
     }
 
-    addMusic(link: string): Promise<string> {
-        return new Promise<string>(resolve => {
-            let played = false;
-            const musicLoader = new MusicLoader(link);
-            let musicsAddedCount = 0;
+    addMusic(link: string): void {
+        const playlistToAdd = loadPlaylistFromLink(link);
+        this.playlist.push(playlistToAdd);
 
-            musicLoader.on("music_added", (music: Music) => {
-                musicsAddedCount++;
-                this.playlist.push(music);
-                if (this.connection) {
-                    if (!played) {
-                        if (!this.actualMusic) {
-                            this.next();
-                            this.play();
-                        }
-                    }
-                }
-            });
-
-            musicLoader.on("end", () => {
-                this.sendEmbed();
-                if (musicsAddedCount === 0) resolve(`Aucune musique n'a été ajouté`);
-                if (musicsAddedCount === 1) resolve(`Une musique a été ajouté`);
-                resolve(`${musicsAddedCount} musiques ont été ajoutés`);
-            });
-
-            musicLoader.on("loading_error", (url: string, error: Error) => {
-                this.errorLoadingMusic(error.toString());
-            });
-        });
+        if (this.connection) {
+            if (!this.actualMusic) {
+                this.next().then(() => {
+                    this.play();
+                });
+            }
+        }
     }
 
-    private next() {
+    private async next() {
         if (this.actualMusic) this.history.push(this.actualMusic);
 
-        this.actualMusic = this.playlist.shift() ?? null;
+        this.actualMusic = await this.playlist.getNextMusic();
 
         this.sendEmbed();
     }
@@ -242,7 +188,7 @@ export class MusicPlayer {
         } else if (this.player.state.status === "paused") {
             this.player.unpause();
         } else {
-            if (!this.actualMusic) this.next();
+            if (!this.actualMusic) await this.next();
             this.play();
         }
     }
@@ -306,13 +252,13 @@ export class MusicPlayer {
     }
 
     private async button_next() {
-        this.next();
+        await this.next();
         if (this.actualMusic) {
             if (this.connection) this.play();
         } else this.player.stop();
     }
 
-    private button_connect(interaction: Discord.ButtonInteraction) {
+    private async button_connect(interaction: Discord.ButtonInteraction) {
         const voiceChannel = (interaction.member as Discord.GuildMember).voice.channel;
 
         if (!voiceChannel) {
@@ -326,7 +272,7 @@ export class MusicPlayer {
         this.connect(voiceChannel);
 
         if (!this.actualMusic) {
-            this.next();
+            await this.next();
             this.play();
         }
     }
@@ -366,12 +312,12 @@ class Music {
         this.thumbnail = data.thumbnail;
     }
 
-    static async create(url: string) {
-        const infos = await ytdl.getInfo(url);
+    static async create(id: string) {
+        const infos = await ytdl.getInfo(id);
 
         const data: MusicData = {
             infos,
-            url,
+            url: `https://youtube.com/watch?v=${id}`,
             title: infos.videoDetails.title,
             author: infos.videoDetails.author,
             length: parseInt(infos.videoDetails.lengthSeconds),
@@ -382,94 +328,126 @@ class Music {
     }
 }
 
-class MusicLoader extends EventEmitter {
-    constructor(link: string) {
+abstract class Playlist {
+    protected cache: (Music | Playlist)[] = [];
+    abstract getNextMusic(): Promise<Music | null>;
+    get length() {
+        return this.cache.length;
+    }
+    unshift(music: Music) {
+        this.cache.unshift(music);
+    }
+    push(playlist: Playlist) {
+        this.cache.push(playlist);
+    }
+}
+
+class RealPlaylist extends Playlist {
+    private readonly id: string;
+    private nextPageToken: string | null = "";
+
+    constructor(id: string) {
         super();
-
-        const url = new URL(link);
-
-        if (url.host === "www.youtube.com" || url.host === "music.youtube.com") {
-            if (url.pathname === "/watch") {
-                const playlistId = url.searchParams.get("list");
-                if (playlistId) {
-                    this.parsePlaylist(playlistId);
-                } else {
-                    this.getMusic(link.slice(32));
-                }
-            } else if (url.pathname === "/playlist") {
-                const id = url.searchParams.get("list");
-                if (!id) throw new Error("Invalid link");
-                this.parsePlaylist(id);
-            } else throw new Error("Invalid link");
-        } else if (url.host === "youtu.be") {
-            this.getMusic(url.pathname.slice(1, url.pathname.length));
-        } else throw new Error("Invalid link");
+        this.id = id;
     }
 
-    private async parsePlaylist(playlistId: string): Promise<void> {
-        const response = await fetch(
-            `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=50&key=${config.googleApiKey}`
-        );
-
-        let json = await response.json();
-
-        // return await parsePlaylistResult(json);
-
-        let count = 0;
-
-        while (1) {
-            count++;
-            this.parsePlaylistResult(json).then(() => {
-                count--;
-
-                if (count === 0) this.emit("end");
-            });
-
-            if (!json.nextPageToken) break;
-
-            json = await this.getPlaylistPage(playlistId, json.nextPageToken);
+    async getNextMusic(): Promise<Music | null> {
+        if (this.cache.length > 0) {
+            const shift = this.cache.shift() ?? null;
+            if (shift instanceof Playlist) return await shift.getNextMusic();
+            else return shift;
+        } else if (this.nextPageToken !== null) {
+            await this.fetchPlaylist();
+            return await this.getNextMusic();
         }
+
+        return null;
     }
 
-    private parsePlaylistResult(json: any): Promise<void> {
-        return new Promise(resolve => {
-            let musics = 0;
+    private fetchPlaylist(): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            if (this.nextPageToken) {
+                var response = await fetch(
+                    `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${this.id}&maxResults=10&pageToken=${this.nextPageToken}&key=${config.googleApiKey}`
+                );
+            } else {
+                var response = await fetch(
+                    `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${this.id}&maxResults=10&key=${config.googleApiKey}`
+                );
+            }
+            const json = await response.json();
+            this.nextPageToken = json.nextPageToken ?? null;
+
+            let resolved = false;
 
             for (const item of json.items) {
                 const url = `https://youtube.com/watch?v=${item.snippet.resourceId.videoId}`;
-                Music.create(url)
-                    .then(music => {
-                        musics++;
-                        this.emit("music_added", music);
-                        if (musics === json.items.length) resolve();
-                    })
-                    .catch(err => {
-                        musics++;
-                        this.emit("loading_error", url, err);
-                        if (musics === json.items.length) resolve();
-                    });
+                try {
+                    const music = await Music.create(url);
+                    this.cache.push(music);
+                    if (!resolved) {
+                        resolved = true;
+                        resolve();
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
             }
         });
     }
+}
 
-    private async getPlaylistPage(id: string, pageToken: string) {
-        const response = await fetch(
-            `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${id}&maxResults=50&pageToken=${pageToken}&key=${config.googleApiKey}`
-        );
+class MusicPlaylist extends Playlist {
+    private musicId: string | null;
 
-        const json = await response.json();
-
-        return json;
+    constructor(musicId: string) {
+        super();
+        this.musicId = musicId;
     }
 
-    private async getMusic(id: string): Promise<void> {
-        const url = `https://youtube.com/watch?v=${id}`;
-        try {
-            this.emit("music_added", await Music.create(url));
-        } catch (error) {
-            this.emit("loading_error", url, error);
+    async getNextMusic(): Promise<Music | null> {
+        if (this.musicId) {
+            const x = this.musicId;
+            this.musicId = null;
+            return await Music.create(x);
         }
-
-        this.emit("end");
+        const shift = this.cache.shift() ?? null;
+        if (shift instanceof Playlist) return await shift.getNextMusic();
+        else return shift;
     }
+
+    get length() {
+        return super.length + (this.musicId ? 1 : 0);
+    }
+}
+
+class EmptyPlaylist extends Playlist {
+    async getNextMusic() {
+        const shift = this.cache.shift() ?? null;
+        if (shift instanceof Playlist) return await shift.getNextMusic();
+        else return shift;
+    }
+}
+
+function loadPlaylistFromLink(link: string): Playlist {
+    const url = new URL(link);
+
+    if (url.host === "www.youtube.com" || url.host === "music.youtube.com") {
+        if (url.pathname === "/watch") {
+            const playlistId = url.searchParams.get("list");
+            if (playlistId) {
+                return new RealPlaylist(playlistId);
+            } else {
+                const id = url.searchParams.get("v");
+                if (!id) throw new Error("Invalid link");
+                return new MusicPlaylist(id);
+            }
+        } else if (url.pathname === "/playlist") {
+            const id = url.searchParams.get("list");
+            if (!id) throw new Error("Invalid link");
+            return new RealPlaylist(id);
+        } else throw new Error("Invalid link");
+    } else if (url.host === "youtu.be") {
+        return new MusicPlaylist(url.pathname.slice(1, url.pathname.length));
+    } else throw new Error("Invalid link");
 }
