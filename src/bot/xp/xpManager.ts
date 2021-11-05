@@ -13,13 +13,26 @@ export default class XpManager {
         this.bot = bot;
         this.server = server;
 
-        this.bot.client.on("messageCreate", message => {
-            if (message.guild?.id.toString() === this.server.id.toString()) this.addXp(message);
-        });
+        if (this.server.config.xp.text.active) {
+            this.bot.client.on("messageCreate", message => {
+                if (message.guild?.id.toString() === this.server.id.toString()) this.addXp(message);
+            });
+        }
 
-        setInterval(() => {
-            this.xpVoc();
-        }, this.server.config.xp.voc.timer);
+        if (this.server.config.xp.voc.active) {
+            setInterval(() => {
+                this.xpVoc();
+            }, this.server.config.xp.voc.timer);
+        }
+
+        console.log(
+            `XpManager for server ${server.name} loaded` +
+                (this.server.config.xp.voc.active && this.server.config.xp.text.active
+                    ? ""
+                    : this.server.config.xp.voc
+                    ? " (text)"
+                    : " (voc)")
+        );
     }
 
     private async addXp(message: Message) {

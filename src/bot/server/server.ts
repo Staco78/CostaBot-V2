@@ -19,9 +19,8 @@ export default class Server {
     readonly members: MembersManager;
     musicPlayer: MusicPlayer | null = null;
     radioPlayer: RadioPlayer | null = null;
-    private xpManager!: XpManager;
+    private xpManager: XpManager | null = null;
     config!: ServerConfig;
-    name: string;
 
     private readonly buttonInteractionEvent: { [event: string]: (interaction: Discord.ButtonInteraction) => void } = {};
 
@@ -32,7 +31,6 @@ export default class Server {
         const guild = this.bot.client.guilds.cache.get(`${id}`);
         if (!guild) throw new Error("Guild not found " + id);
         this.guild = guild;
-        this.name = guild.name;
 
         this.members = new MembersManager(this);
 
@@ -40,7 +38,9 @@ export default class Server {
         this.checkConfig().then(() => {
             this.loadCommands();
 
-            this.xpManager = new XpManager(this.bot, this);
+            if (this.config.xp.active) {
+                this.xpManager = new XpManager(this.bot, this);
+            }
 
             this.bot.client.on("interactionCreate", interaction => {
                 if (interaction.isCommand()) {
@@ -63,6 +63,10 @@ export default class Server {
 
     get id() {
         return this._id;
+    }
+
+    get name() {
+        return this.guild.name;
     }
 
     private loadConfig(): void {
@@ -97,16 +101,20 @@ export default class Server {
 
     private async checkConfig() {
         if (!this.config.xp) throw new Error("Server config: missing xp");
+        if (this.config.xp.active === undefined) throw new Error("Server config: missing xp.active");
 
         if (!this.config.xp.text) throw new Error("Server config: missing xp.text");
         if (!this.config.xp.text.min) throw new Error("Server config: missing xp.text.min");
         if (!this.config.xp.text.max) throw new Error("Server config: missing xp.text.max");
         if (!this.config.xp.text.cooldown) throw new Error("Server config: missing xp.text.cooldown");
+        if (this.config.xp.text.active === undefined) throw new Error("Server config: missing xp.active");
 
         if (!this.config.xp.voc) throw new Error("Server config: missing xp.voc");
         if (!this.config.xp.voc.min) throw new Error("Server config: missing xp.voc.min");
         if (!this.config.xp.voc.max) throw new Error("Server config: missing xp.voc.max");
         if (!this.config.xp.voc.timer) throw new Error("Server config: missing xp.voc.timer");
+        if (this.config.xp.voc.active === undefined) throw new Error("Server config: missing xp.active");
+
 
         if (!this.config.xp.lvlPassedChannel) throw new Error("Server config: missing xp.lvlPassedChannel");
 

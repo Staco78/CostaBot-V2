@@ -14,12 +14,15 @@ declare const enum InteractionReplyType {
 
 interface ServerConfig {
     xp: {
+        active: boolean;
         text: {
+            active: boolean;
             min: number;
             max: number;
             cooldown: number;
         };
         voc: {
+            active: boolean;
             min: number;
             max: number;
             timer: number;

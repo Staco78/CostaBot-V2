@@ -1,11 +1,14 @@
 {
     "xp": {
+        "active": true,
         "text": {
+            "active": true,
             "min": 10,
             "max": 20,
             "cooldown": 30000
         },
         "voc": {
+            "active": true,
             "min": 15,
             "max": 25,
             "timer": 60000

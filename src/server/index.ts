@@ -9,8 +9,10 @@ namespace Server {
     const app = express();
 
     export function listen() {
-        app.listen(config.server.port);
-        console.log(`Server started at port ${config.server.port}`);
+        if (config.server.active) {
+            app.listen(config.server.port);
+            console.log(`Server started at port ${config.server.port}`);
+        }
     }
 
     app.use((req, res, next) => {
