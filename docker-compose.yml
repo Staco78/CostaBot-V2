@@ -13,6 +13,7 @@ services:
         image: mongo
         volumes:
             - mongo-data:/data/db
+        restart: always
 
 volumes:
     mongo-data:
