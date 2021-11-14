@@ -104,17 +104,20 @@ export default class Server {
         if (this.config.xp.active === undefined) throw new Error("Server config: missing xp.active");
 
         if (!this.config.xp.text) throw new Error("Server config: missing xp.text");
-        if (!this.config.xp.text.min) throw new Error("Server config: missing xp.text.min");
-        if (!this.config.xp.text.max) throw new Error("Server config: missing xp.text.max");
+        if (!this.config.xp.text.min && this.config.xp.text.min !== 0)
+            throw new Error("Server config: missing xp.text.min");
+        if (!this.config.xp.text.max && this.config.xp.text.max !== 0)
+            throw new Error("Server config: missing xp.text.max");
         if (!this.config.xp.text.cooldown) throw new Error("Server config: missing xp.text.cooldown");
         if (this.config.xp.text.active === undefined) throw new Error("Server config: missing xp.active");
 
         if (!this.config.xp.voc) throw new Error("Server config: missing xp.voc");
-        if (!this.config.xp.voc.min) throw new Error("Server config: missing xp.voc.min");
-        if (!this.config.xp.voc.max) throw new Error("Server config: missing xp.voc.max");
+        if (!this.config.xp.voc.min && this.config.xp.voc.min !== 0)
+            throw new Error("Server config: missing xp.voc.min");
+        if (!this.config.xp.voc.max && this.config.xp.voc.max !== 0)
+            throw new Error("Server config: missing xp.voc.max");
         if (!this.config.xp.voc.timer) throw new Error("Server config: missing xp.voc.timer");
         if (this.config.xp.voc.active === undefined) throw new Error("Server config: missing xp.active");
-
 
         if (!this.config.xp.lvlPassedChannel) throw new Error("Server config: missing xp.lvlPassedChannel");
 

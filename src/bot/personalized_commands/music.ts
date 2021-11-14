@@ -53,6 +53,7 @@ export class MusicPlayer {
     private actualMusic: Music | null = null;
 
     private reject: (reason: string) => void;
+    private isDestroyed = false;
 
     constructor(
         server: Server,
@@ -66,7 +67,11 @@ export class MusicPlayer {
         this.reject = reject;
 
         this.player.on("stateChange", async (oldState, newState) => {
-            if (newState.status === AudioPlayerStatus.Idle && oldState.status !== AudioPlayerStatus.Idle) {
+            if (
+                newState.status === AudioPlayerStatus.Idle &&
+                oldState.status !== AudioPlayerStatus.Idle &&
+                !this.isDestroyed
+            ) {
                 await this.next();
                 this.play();
             }
@@ -117,6 +122,7 @@ export class MusicPlayer {
     }
 
     async destroy() {
+        this.isDestroyed = true;
         this.player.stop(true);
         this.player.removeAllListeners();
         if (this.connection?.state.status !== "destroyed") this.connection?.destroy(true);
@@ -383,9 +389,8 @@ class RealPlaylist extends Playlist {
             let resolved = false;
 
             for (const item of json.items) {
-                const url = `https://youtube.com/watch?v=${item.snippet.resourceId.videoId}`;
                 try {
-                    const music = await Music.create(url);
+                    const music = await Music.create(item.snippet.resourceId.videoId);
                     this.cache.push(music);
                     if (!resolved) {
                         resolved = true;
@@ -393,6 +398,7 @@ class RealPlaylist extends Playlist {
                     }
                 } catch (error) {
                     console.error(error);
+                    reject(error);
                 }
             }
         });
@@ -436,7 +442,7 @@ function loadPlaylistFromLink(link: string): Playlist {
 
     if (url.host === "www.youtube.com" || url.host === "music.youtube.com") {
         if (url.pathname === "/watch") {
-            const playlistId = url.searchParams.get("list");
+            const playlistId = url.searchParams.get("list") ?? url.searchParams.get("playlist");
             if (playlistId) {
                 return new RealPlaylist(playlistId);
             } else {

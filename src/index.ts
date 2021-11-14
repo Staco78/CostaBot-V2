@@ -14,9 +14,9 @@ try {
     process.exit(-1);
 }
 
+Server.listen();
 Database.connect().then(() => {
     const bot = new Bot(config.bot.token, () => {
         Constants.bot = bot;
-        Server.listen();
     });
 });

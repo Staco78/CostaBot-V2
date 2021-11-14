@@ -2,3 +2,5 @@ node_modules/
 dist/
 ignore/
 .env
+servers/
+!servers/all/
