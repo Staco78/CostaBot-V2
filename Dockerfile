@@ -30,4 +30,5 @@ COPY --from=website-build /website/dist ./public
 COPY package.json ./package.json
 COPY assets ./assets
 COPY start.js ./start.js
+ENV NODE_ENV production
 CMD ["node", "start.js"]
