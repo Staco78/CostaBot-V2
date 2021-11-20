@@ -22,10 +22,10 @@ export async function exec(bot: Bot, server: Server, interaction: Discord.Comman
     if (server.radioPlayer) throw new Error("Impossible de lancer la musique car la radio est déjà lancée");
 
     if (server.musicPlayer) {
-        if (interaction.options.data[0].value && typeof interaction.options.data[0].value === "string") {
+        if (interaction.options.data[0] && interaction.options.data[0].value && typeof interaction.options.data[0].value === "string" && interaction.options.data[0].value.length > 0) {
             server.musicPlayer.addMusic(interaction.options.data[0].value);
             interaction.editReply("Ajouté avec succès");
-        }
+        } else interaction.editReply("Aucune musique n'a été spécifiée");
     } else {
         await interaction.editReply("Je lance la musique");
 
@@ -362,8 +362,17 @@ class RealPlaylist extends Playlist {
     async getNextMusic(): Promise<Music | null> {
         if (this.cache.length > 0) {
             const shift = this.cache.shift() ?? null;
-            if (shift instanceof Playlist) return await shift.getNextMusic();
-            else return shift;
+            if (shift instanceof Playlist) {
+                if (this.nextPageToken !== null) {
+                    const cache = [...this.cache];
+                    this.cache = [];
+                    await this.fetchPlaylist();
+                    this.cache = [...this.cache, ...cache];
+                    return this.getNextMusic();
+                }
+                return await shift.getNextMusic();
+            }
+            return shift;
         } else if (this.nextPageToken !== null) {
             await this.fetchPlaylist();
             return await this.getNextMusic();
